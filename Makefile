@@ -12,6 +12,7 @@ help: ## このヘルプを表示
 install: ## 依存関係をインストール
 	@echo "📦 Installing dependencies..."
 	npm ci --no-audit --no-fund
+	npm run build
 
 # フォーマット
 fmt: ## コードをフォーマット
@@ -70,6 +71,11 @@ test-unit-ci: ## CI用の最小依存関係で単体テストを実行
 	@echo "🤖 Running unit tests with minimal dependencies..."
 	@npm install jest@29.7.0 --no-save --silent && \
 	npm run test:unit
+
+# ビルド
+build: ## TypeScriptをビルド
+	@echo "🔨 Building TypeScript..."
+	npm run build
 
 # 開発
 dev: ## 開発モードで実行

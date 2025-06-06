@@ -1,7 +1,7 @@
 const { execSync } = require('child_process');
 
 // テスト用のモジュール読み込み
-const originalModule = require('../../miyako-maps-search.js');
+const originalModule = require('../../build/miyako-maps-search.js');
 
 // モックの設定
 jest.mock('child_process');

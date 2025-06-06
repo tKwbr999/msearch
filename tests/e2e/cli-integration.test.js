@@ -2,7 +2,7 @@ const { execSync, spawn } = require('child_process');
 const path = require('path');
 
 // テスト用のCLIパス
-const CLI_PATH = path.join(__dirname, '../../miyako-maps-search.js');
+const CLI_PATH = path.join(__dirname, '../../build/miyako-maps-search.js');
 
 describe('🚀 CLI Integration E2E Tests', () => {
   
