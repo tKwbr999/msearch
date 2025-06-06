@@ -290,10 +290,12 @@ msearch "薬局" -l               # 薬局をターミナルに一覧
 ### 開発フロー
 
 **ブランチ構成:**
+
 - `main`: 本番用ブランチ（自動リリース）
 - `develop`: 開発用ブランチ
 
 **開発手順:**
+
 ```bash
 # 1. developブランチで開発
 git checkout develop
@@ -312,6 +314,7 @@ git push origin develop
 ```
 
 **自動化されるプロセス:**
+
 1. `develop`ブランチへのプッシュでCI実行
 2. Lint、Format、その他チェック実行
 3. 全チェック通過後：
