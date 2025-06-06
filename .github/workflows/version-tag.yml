@@ -24,14 +24,19 @@ jobs:
         uses: actions/cache@v4
         id: cache-node-modules
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+          path: |
+            node_modules
+            ~/.npm
+          key: ${{ runner.os }}-deps-${{ hashFiles('package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-modules-
+            ${{ runner.os }}-deps-
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: npm ci --prefer-offline --no-audit
+        run: |
+          export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+          npm ci --prefer-offline --no-audit --timeout=300000 --maxsockets=1
+        timeout-minutes: 10
 
       - name: Run all checks including tests
         run: make check-all
