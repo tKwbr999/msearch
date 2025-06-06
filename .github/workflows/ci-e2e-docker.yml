@@ -22,11 +22,16 @@ on:
 
 env:
   NODE_VERSION: '20'
+  # npm設定の最適化
+  NPM_CONFIG_PROGRESS: 'false'
+  NPM_CONFIG_AUDIT: 'false'
+  NPM_CONFIG_FUND: 'false'
+  NPM_CONFIG_LOGLEVEL: 'warn'
 
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,6 +40,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org/'
 
       - name: Cache dependencies for lint/format
         uses: actions/cache@v4
@@ -46,25 +52,73 @@ jobs:
           restore-keys: |
             lint-format-deps-${{ runner.os }}-
 
+      - name: Configure npm for CI
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+          npm config set fetch-retries 3
+          # キャッシュクリア
+          npm cache clean --force || true
+          echo "🔧 npm configuration:"
+          npm config list
+
       - name: Install minimal dependencies for formatting and linting
         run: |
+          set -e
           export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
           export PUPPETEER_SKIP_DOWNLOAD=1
-          npm install prettier eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint-config-prettier eslint-plugin-prettier typescript@~5.5.0 --no-save --silent
-        timeout-minutes: 2
+
+          echo "📦 Installing formatting and linting dependencies..."
+          echo "Start time: $(date)"
+
+          # リトライ機能付きインストール
+          success=false
+          for i in {1..3}; do
+            echo "🔄 Attempt $i/3"
+            if npm install prettier@3.2.5 eslint@8.56.0 @typescript-eslint/eslint-plugin@7.1.0 @typescript-eslint/parser@7.1.0 eslint-config-prettier@9.1.0 eslint-plugin-prettier@5.1.3 typescript@5.5.4 --no-save --no-optional --prefer-offline; then
+              echo "✅ Installation successful on attempt $i"
+              success=true
+              break
+            else
+              echo "❌ Installation failed on attempt $i"
+              if [ $i -lt 3 ]; then
+                echo "⏳ Waiting 10 seconds before retry..."
+                sleep 10
+                npm cache clean --force || true
+              fi
+            fi
+          done
+
+          # npmが失敗した場合のフォールバック: 個別インストール
+          if [ "$success" = false ]; then
+            echo "🚨 npm install failed, trying individual package installation..."
+            npm install prettier@3.2.5 --no-save --no-optional
+            npm install eslint@8.56.0 --no-save --no-optional
+            npm install @typescript-eslint/eslint-plugin@7.1.0 --no-save --no-optional
+            npm install @typescript-eslint/parser@7.1.0 --no-save --no-optional
+            npm install eslint-config-prettier@9.1.0 --no-save --no-optional
+            npm install eslint-plugin-prettier@5.1.3 --no-save --no-optional
+            npm install typescript@5.5.4 --no-save --no-optional
+          fi
+
+          echo "End time: $(date)"
+          echo "📊 Installed packages:"
+          npm list --depth=0 || true
+        timeout-minutes: 5
 
       - name: Check formatting
         run: npx prettier --check "**/*.{ts,json,md}" --ignore-path .prettierignore
-        timeout-minutes: 1
+        timeout-minutes: 2
 
       - name: Run linting
         run: npx eslint . --ext .ts --ignore-path .eslintignore
-        timeout-minutes: 1
+        timeout-minutes: 2
 
   unit-tests:
     runs-on: ubuntu-latest
     needs: [check]
-    timeout-minutes: 10
+    timeout-minutes: 8
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -73,20 +127,59 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org/'
+
+            - name: Configure npm for CI
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+          npm config set fetch-retries 3
+          # キャッシュクリア
+          npm cache clean --force || true
 
       - name: Install minimal dependencies for unit tests
         run: |
-          # 単体テストにはjestのみ必要（playwright, cheerioはモック）
-          npm install jest@29.7.0 --no-save --silent
-        timeout-minutes: 1
+          set -e
+          echo "📦 Installing unit test dependencies..."
+          echo "Start time: $(date)"
+
+          # リトライ機能付きインストール
+          success=false
+          for i in {1..3}; do
+            echo "🔄 Attempt $i/3"
+            if npm install jest@29.7.0 --no-save --no-optional --prefer-offline; then
+              echo "✅ Installation successful on attempt $i"
+              success=true
+              break
+            else
+              echo "❌ Installation failed on attempt $i"
+              if [ $i -lt 3 ]; then
+                echo "⏳ Waiting 10 seconds before retry..."
+                sleep 10
+                npm cache clean --force || true
+              fi
+            fi
+          done
+
+          # 最終的にまだ失敗している場合のフォールバック
+          if [ "$success" = false ]; then
+            echo "🚨 npm install failed, trying without cache..."
+            npm install jest@29.7.0 --no-save --no-optional --no-cache
+          fi
+
+          echo "End time: $(date)"
+          echo "📊 Installed packages:"
+          npm list --depth=0 || true
+        timeout-minutes: 3
 
       - name: Run unit tests
         run: npm run test:unit
-        timeout-minutes: 2
+        timeout-minutes: 3
 
   e2e-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     container:
       image: mcr.microsoft.com/playwright:v1.42.1-jammy
       options: --user 1001
@@ -98,18 +191,61 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org/'
+
+            - name: Configure npm for CI
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+          npm config set fetch-retries 3
+          # キャッシュクリア
+          npm cache clean --force || true
+          echo "🔧 npm configuration:"
+          npm config list
 
       - name: Install minimal dependencies for E2E tests
         run: |
-          # Playwrightは既にDockerイメージに含まれているため、jestとcheerioのみインストール
-          npm install jest@29.7.0 cheerio@1.0.0-rc.12 --no-save --silent
-        timeout-minutes: 2
+          set -e
+          echo "📦 Installing E2E test dependencies..."
+          echo "Start time: $(date)"
+
+          # リトライ機能付きインストール
+          success=false
+          for i in {1..3}; do
+            echo "🔄 Attempt $i/3"
+            if npm install jest@29.7.0 cheerio@1.0.0-rc.12 --no-save --no-optional --prefer-offline; then
+              echo "✅ Installation successful on attempt $i"
+              success=true
+              break
+            else
+              echo "❌ Installation failed on attempt $i"
+              if [ $i -lt 3 ]; then
+                echo "⏳ Waiting 10 seconds before retry..."
+                sleep 10
+                npm cache clean --force || true
+              fi
+            fi
+          done
+
+          # フォールバック: 個別インストール
+          if [ "$success" = false ]; then
+            echo "🚨 npm install failed, trying individual package installation..."
+            npm install jest@29.7.0 --no-save --no-optional --no-cache
+            npm install cheerio@1.0.0-rc.12 --no-save --no-optional --no-cache
+          fi
+
+          echo "End time: $(date)"
+          echo "📊 Installed packages:"
+          npm list --depth=0 || true
+        timeout-minutes: 5
 
       - name: Run E2E tests
         run: npm run test:e2e-ci
         env:
           CI: true
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+        timeout-minutes: 10
 
   merge-to-main:
     runs-on: ubuntu-latest
