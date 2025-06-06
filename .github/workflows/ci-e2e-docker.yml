@@ -297,4 +297,17 @@ jobs:
             git commit -m "Auto-merge from develop after successful tests (resolved conflicts)"
           fi
           
+          # TypeScriptをビルドしてbuild/ディレクトリを更新
+          npm install typescript@5.5.4 --no-save --no-optional
+          npm run build
+          
+          # ビルド成果物をコミット
+          if ! git diff --quiet build/; then
+            echo "📦 Build output changed, committing..."
+            git add build/
+            git commit -m "🔨 Update build output from develop merge"
+          else
+            echo "ℹ️ No build changes detected"
+          fi
+          
           git push origin main
