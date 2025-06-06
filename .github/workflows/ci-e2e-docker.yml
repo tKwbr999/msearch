@@ -1,16 +1,23 @@
 # CI/CD ワークフロー - 効率的な並列実行とテスト
 #
+# トリガー条件:
+# - developブランチへのpush
+# - 全てのブランチへのPR
+# - 手動実行 (workflow_dispatch)
+#
 # 実行フロー:
-# 1. 並列実行: fmt, lint, docker-build
-# 2. E2Eテスト: docker-build完了後にPlaywrightテスト実行
-# 3. その他テスト: fmt/lint完了後に実行
-# 4. 全完了後: develop→main自動マージ
+# 1. check: フォーマット・リントチェック
+# 2. unit-tests: 単体テスト (check完了後)
+# 3. e2e-tests: E2Eテスト (Playwright Docker環境)
+# 4. merge-to-main: mainへのPRの場合のみ自動マージ
 
 name: CI/CD Pipeline
 
 on:
+  push:
+    branches: [ develop ]
   pull_request:
-    branches: [ main, develop ]
+    # 全てのブランチへのPRで実行
   workflow_dispatch:
 
 env:
@@ -84,6 +91,7 @@ jobs:
   merge-to-main:
     runs-on: ubuntu-latest
     needs: [unit-tests, e2e-tests]
+    # mainブランチへのPRの場合のみ自動マージを実行
     if: github.event_name == 'pull_request' && github.base_ref == 'main'
     steps:
       - name: Checkout code
