@@ -2,7 +2,7 @@
   "name": "msearch",
   "version": "0.6.0",
   "description": "宮古諸島専用Google Mapsコマンドライン検索ツール",
-  "main": "build/miyako-maps-search.js",
+  "main": "miyako-maps-search.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/tKwbr999/msearch.git"
@@ -12,10 +12,7 @@
     "url": "https://github.com/tKwbr999/msearch/issues"
   },
   "scripts": {
-    "build": "npx tsc",
-    "prepare": "npm run build",
-    "prepublishOnly": "npm run build",
-    "start": "node build/miyako-maps-search.js",
+    "start": "node miyako-maps-search.js",
     "dev": "ts-node miyako-maps-search.ts",
     "lint": "eslint . --ext .ts --ignore-path .eslintignore",
     "lint:fix": "eslint . --ext .ts --fix --ignore-path .eslintignore",
@@ -23,10 +20,10 @@
     "fmt:check": "prettier --check \"**/*.{ts,json,md}\" --ignore-path .prettierignore"
   },
   "bin": {
-    "msearch": "./build/miyako-maps-search.js"
+    "msearch": "./miyako-maps-search.js"
   },
   "files": [
-    "build/",
+    "miyako-maps-search.js",
     "README.md"
   ],
   "keywords": [
@@ -43,8 +40,7 @@
   "license": "MIT",
   "dependencies": {
     "cheerio": "^1.0.0-rc.12",
-    "playwright": "^1.42.1",
-    "typescript": "^5.8.3"
+    "playwright": "^1.42.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.2",
@@ -56,6 +52,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
     "prettier": "^3.2.5",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }
