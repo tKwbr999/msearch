@@ -1,0 +1,5 @@
+# Ignore build output (miyako-maps-search.js) so that 'make check' (fmt:check) does not warn
+build/miyako-maps-search.js
+
+# Ignore all .js files (チェック対象から .js を外す)
+*.js
