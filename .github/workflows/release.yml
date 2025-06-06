@@ -11,6 +11,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'miyako-maps-search.ts'
+      - 'package.json'
+      - 'tsconfig.json'
 
 jobs:
   release:
@@ -46,6 +50,11 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git config --local commit.gpgsign true
 
+      - name: Install dependencies and build
+        run: |
+          npm install typescript@5.5.4 --no-save --no-optional
+          npm run build
+
       - name: Get latest tag
         id: get_latest_tag
         run: |
@@ -74,8 +83,8 @@ jobs:
           # package.jsonのバージョンを更新
           npm version "${{ steps.generate_version.outputs.new_version_no_v }}" --no-git-tag-version
 
-          # 変更をコミット
-          git add package.json package-lock.json
+          # 変更をコミット（ビルド成果物も含める）
+          git add package.json package-lock.json build/
           git commit -m "🔖 Bump version to ${{ steps.generate_version.outputs.new_version }}"
           git push origin main
 

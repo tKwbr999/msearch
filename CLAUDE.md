@@ -220,6 +220,20 @@ const POPULAR_KEYWORDS = [
 
 ## 🔄 CI/CD最適化
 
+### 現在の課題と解決方針
+
+**ファイル構成の問題**:
+
+- `miyako-maps-search.js` (root, 547行) - 実際に使用される実行ファイル
+- `build/miyako-maps-search.js` (319行) - 未使用のTypeScriptコンパイル成果物
+- `miyako-maps-search.ts` - 開発用TypeScriptソース
+
+**リリースワークフローの問題**:
+
+- 現在：mainブランチへの全pushでリリースが発動
+- 課題：コードに変更がなくてもリリースが実行される
+- 解決策：`miyako-maps-search.js`の変更時のみ発動するよう修正
+
 ### GitHub Actions設定
 
 ```yaml
@@ -238,6 +252,15 @@ const POPULAR_KEYWORDS = [
     export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
     npm ci --prefer-offline --no-audit --timeout=300000 --maxsockets=1
   timeout-minutes: 10
+
+# パスフィルター（要追加）
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'miyako-maps-search.js'
+      - 'package.json'
 ```
 
 ## 💡 Claude AI作業時の注意点

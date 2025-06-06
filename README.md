@@ -231,7 +231,25 @@ make check-all
 2段階のCI/CDパイプライン：
 
 1. **develop → main**: テスト・リント・フォーマットチェック後、自動マージ
-2. **main → release**: バージョン自動アップ、タグ作成、GitHub Release
+2. **main → release**: `miyako-maps-search.js` 変更時のみバージョン自動アップ、タグ作成、GitHub Release
+
+**最適化されたリリース条件**:
+
+- コアファイル (`miyako-maps-search.js`) 変更時のみリリース実行
+- 不要なリリースを防止し、効率的なCI/CD運用を実現
+
+### プロジェクト構造
+
+```
+msearch/
+├── miyako-maps-search.js    # メイン実行ファイル（本番用）
+├── miyako-maps-search.ts    # TypeScriptソース（開発用）
+├── build/                   # ビルド出力ディレクトリ
+├── tests/                   # テストディレクトリ
+│   ├── unit/               # 単体テスト (11個)
+│   └── e2e/                # E2Eテスト (11個)
+└── .github/workflows/      # CI/CDワークフロー
+```
 
 ## ライセンス
 

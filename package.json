@@ -2,7 +2,7 @@
   "name": "msearch",
   "version": "0.7.1",
   "description": "宮古諸島専用Google Mapsコマンドライン検索ツール",
-  "main": "miyako-maps-search.js",
+  "main": "build/miyako-maps-search.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/tKwbr999/msearch.git#main",
@@ -16,8 +16,10 @@
     "url": "https://github.com/tKwbr999/msearch/issues"
   },
   "scripts": {
-    "start": "node miyako-maps-search.js",
+    "build": "tsc",
+    "start": "node build/miyako-maps-search.js",
     "dev": "ts-node miyako-maps-search.ts",
+    "prepare": "npm run build",
     "test": "jest",
     "test:unit": "jest --testPathPattern=unit",
     "test:e2e": "jest --testPathPattern=e2e",
@@ -33,10 +35,10 @@
     "fmt:check": "prettier --check \"**/*.{ts,json,md}\" --ignore-path .prettierignore"
   },
   "bin": {
-    "msearch": "./miyako-maps-search.js"
+    "msearch": "./build/miyako-maps-search.js"
   },
   "files": [
-    "miyako-maps-search.js",
+    "build/miyako-maps-search.js",
     "README.md"
   ],
   "keywords": [
