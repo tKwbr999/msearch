@@ -20,6 +20,10 @@ on:
     # 全てのブランチへのPRで実行
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
+
 env:
   NODE_VERSION: '20'
   # npm設定の最適化
