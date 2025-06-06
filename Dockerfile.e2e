@@ -7,6 +7,7 @@ RUN apk add --no-cache \
     bash \
     make \
     chromium \
+    chromium-chromedriver \
     && rm -rf /var/cache/apk/*
 
 # Playwrightのブラウザパスを設定
@@ -20,9 +21,8 @@ WORKDIR /app
 # package.jsonとpackage-lock.jsonをコピー
 COPY package*.json ./
 
-# 依存関係を事前インストール（キャッシュ最適化）
-RUN npm ci --only=production --no-audit --no-fund --silent && \
-    npm ci --only=dev --no-audit --no-fund --silent && \
+# 依存関係を事前インストール（段階的キャッシュ最適化）
+RUN npm ci --no-audit --no-fund --silent && \
     npm cache clean --force
 
 # Jestとテスト用ライブラリを事前インストール
