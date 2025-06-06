@@ -1,0 +1,22 @@
+name: Docker Image Cleanup
+
+on:
+  schedule:
+    # 毎週日曜日にクリーンアップ
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+jobs:
+  cleanup-old-images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Delete old container images
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: 'msearch/e2e-test'
+          package-type: 'container'
+          min-versions-to-keep: 3
+          delete-only-untagged-versions: false
