@@ -29,18 +29,48 @@
 
 ### GitHubからのインストール
 
-#### 方法1: 直接インストール（推奨）
+#### 方法1: 最新安定版のインストール（推奨）
 
 ```bash
-# GitHubリポジトリから直接インストール
-npm install -g https://github.com/tKwbr999/msearch.git
+# 最新の安定版（mainブランチ）をインストール
+npm install -g https://github.com/tKwbr999/msearch.git#main
 
-# または
-npm install -g git+https://github.com/tKwbr999/msearch.git
+# または最新のリリースタグを指定
+npm install -g https://github.com/tKwbr999/msearch.git#latest
+
+# 特定のバージョンタグを指定
+npm install -g https://github.com/tKwbr999/msearch.git#v0.7.0
 
 # 動作確認
 msearch --help
 ```
+
+#### 方法2: 開発版のインストール
+
+```bash
+# 開発版（developブランチ）をインストール
+npm install -g https://github.com/tKwbr999/msearch.git#develop
+
+# 動作確認
+msearch --help
+```
+
+#### 方法3: シンプルインストール（推奨）
+
+```bash
+# デフォルトブランチ（main）からインストール
+# 最新の安定版が自動的に取得されます
+npm install -g https://github.com/tKwbr999/msearch.git
+
+# 動作確認
+msearch --help
+```
+
+**💡 ブランチ・タグ指定オプション:**
+- **未指定**: 最新安定版（main）
+- **`#latest`**: 最新リリースタグ  
+- **`#develop`**: 開発版
+- **`#v0.7.0`**: 特定バージョン
 
 #### 方法2: リポジトリをクローンしてからインストール
 
@@ -105,15 +135,16 @@ npm run build && node miyako-maps-search.js [options]
 
 ### アップデート方法
 
-#### GitHubからのアップデート
-
 ```bash
-# 最新版に直接アップデート
-npm install -g https://github.com/tKwbr999/msearch.git
+# 最新の安定版にアップデート
+npm install -g https://github.com/tKwbr999/msearch.git#main
 
-# または一度アンインストールしてから再インストール
+# 特定のバージョンにアップデート
+npm install -g https://github.com/tKwbr999/msearch.git#v0.7.1
+
+# 完全に再インストールする場合
 npm uninstall -g msearch
-npm install -g https://github.com/tKwbr999/msearch.git
+npm install -g https://github.com/tKwbr999/msearch.git#main
 
 # 動作確認
 msearch --help
@@ -291,7 +322,7 @@ msearch "薬局" -l               # 薬局をターミナルに一覧
 
 **ブランチ構成:**
 
-- `main`: 本番用ブランチ（自動リリース）
+- `main`: 本番用ブランチ（デフォルト・自動リリース）
 - `develop`: 開発用ブランチ
 
 **開発手順:**

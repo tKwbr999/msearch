@@ -82,6 +82,33 @@ jobs:
           git tag "${{ steps.generate_version.outputs.new_version }}"
           git push origin "${{ steps.generate_version.outputs.new_version }}"
 
+      - name: Update latest tag
+        run: |
+          git tag -f latest
+          git push origin latest --force
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.generate_version.outputs.new_version }}
+          release_name: Release ${{ steps.generate_version.outputs.new_version }}
+          body: |
+            🚀 自動リリース ${{ steps.generate_version.outputs.new_version }}
+            
+            ## インストール方法
+            ```bash
+            npm install -g https://github.com/tKwbr999/msearch.git#main
+            ```
+            
+            ## 最新タグでのインストール
+            ```bash
+            npm install -g https://github.com/tKwbr999/msearch.git#${{ steps.generate_version.outputs.new_version }}
+            ```
+          draft: false
+          prerelease: false
+
       - name: Merge to main
         run: |
           git checkout main

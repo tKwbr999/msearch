@@ -5,7 +5,11 @@
   "main": "miyako-maps-search.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tKwbr999/msearch.git"
+    "url": "https://github.com/tKwbr999/msearch.git#main",
+    "directory": "."
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
   },
   "homepage": "https://github.com/tKwbr999/msearch",
   "bugs": {
