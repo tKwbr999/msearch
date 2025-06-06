@@ -1,3 +1,10 @@
+# リリースワークフロー - バージョンアップとタグ作成
+#
+# mainブランチへのマージ時に実行:
+# 1. package.jsonのバージョンを自動アップ（minor version）
+# 2. 新しいバージョンタグを作成
+# 3. GitHub Releaseを作成
+
 name: Release
 
 on:
@@ -20,26 +27,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        id: cache-node-modules
-        with:
-          path: |
-            node_modules
-            ~/.npm
-          key: ${{ runner.os }}-deps-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-deps-
-
-      - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: |
-          export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-          export PLAYWRIGHT_SKIP_BROWSER_GC=1
-          npm ci --prefer-offline --no-audit --no-fund --silent --timeout=300000 --maxsockets=1
-        timeout-minutes: 8
 
       - name: Configure Git
         run: |
@@ -49,8 +36,9 @@ jobs:
       - name: Get latest tag
         id: get_latest_tag
         run: |
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.7.1")
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "📋 Latest tag: $LATEST_TAG"
 
       - name: Generate new version
         id: generate_version
@@ -58,31 +46,57 @@ jobs:
           LATEST_TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
           VERSION=${LATEST_TAG#v}
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          NEW_PATCH=$((PATCH + 1))
-          NEW_VERSION="v${MAJOR}.${MINOR}.${NEW_PATCH}"
-          NEW_VERSION_NUMBER="${MAJOR}.${MINOR}.${NEW_PATCH}"
+
+          # Minor version up (0.1.0 -> 0.2.0)
+          NEW_MINOR=$((MINOR + 1))
+          NEW_VERSION="v${MAJOR}.${NEW_MINOR}.0"
+          NEW_VERSION_NO_V="${MAJOR}.${NEW_MINOR}.0"
+
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "new_version_number=$NEW_VERSION_NUMBER" >> $GITHUB_OUTPUT
+          echo "new_version_no_v=$NEW_VERSION_NO_V" >> $GITHUB_OUTPUT
+          echo "🚀 New version: $NEW_VERSION"
 
       - name: Update package.json version
         run: |
-          npm version "${{ steps.generate_version.outputs.new_version_number }}" --no-git-tag-version
+          # package.jsonのバージョンを更新
+          npm version "${{ steps.generate_version.outputs.new_version_no_v }}" --no-git-tag-version
 
-      - name: Commit version bump
-        run: |
+          # 変更をコミット
           git add package.json package-lock.json
-          git commit -m "🚀 Release ${{ steps.generate_version.outputs.new_version }}"
+          git commit -m "🔖 Bump version to ${{ steps.generate_version.outputs.new_version }}"
           git push origin main
 
       - name: Create and push tag
         run: |
+          # タグを作成してプッシュ
           git tag "${{ steps.generate_version.outputs.new_version }}"
           git push origin "${{ steps.generate_version.outputs.new_version }}"
+          echo "✅ Created and pushed tag: ${{ steps.generate_version.outputs.new_version }}"
 
-      - name: Update latest tag
+      - name: Generate release notes
+        id: release_notes
         run: |
-          git tag -f latest
-          git push origin latest --force
+          # 前回のタグから今回までのコミットログを取得
+          PREVIOUS_TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
+          NEW_TAG="${{ steps.generate_version.outputs.new_version }}"
+
+          echo "## 🚀 What's Changed" > release_notes.md
+          echo "" >> release_notes.md
+
+          # コミットログを取得（マージコミットを除外）
+          git log ${PREVIOUS_TAG}..HEAD --oneline --no-merges --pretty=format:"- %s" >> release_notes.md
+
+          echo "" >> release_notes.md
+          echo "## 📦 Installation" >> release_notes.md
+          echo "" >> release_notes.md
+          echo '```bash' >> release_notes.md
+          echo "npm install -g https://github.com/${{ github.repository }}.git#${NEW_TAG}" >> release_notes.md
+          echo '```' >> release_notes.md
+
+          # リリースノートの内容を出力に設定
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
@@ -91,28 +105,6 @@ jobs:
         with:
           tag_name: ${{ steps.generate_version.outputs.new_version }}
           release_name: Release ${{ steps.generate_version.outputs.new_version }}
-          body: |
-            🚀 自動リリース ${{ steps.generate_version.outputs.new_version }}
-            
-            ## インストール方法
-            ```bash
-            # シンプルインストール（推奨）
-            npm install -g https://github.com/tKwbr999/msearch.git
-            
-            # 最新タグでのインストール
-            npm install -g https://github.com/tKwbr999/msearch.git#latest
-            
-            # 特定バージョンでのインストール
-            npm install -g https://github.com/tKwbr999/msearch.git#${{ steps.generate_version.outputs.new_version }}
-            ```
-            
-            ## 変更内容
-            developブランチからの最新の変更が含まれています。
+          body: ${{ steps.release_notes.outputs.notes }}
           draft: false
           prerelease: false
-
-      - name: Sync back to develop
-        run: |
-          git checkout develop
-          git merge main --no-ff -m "🔄 Sync version update from main"
-          git push origin develop
