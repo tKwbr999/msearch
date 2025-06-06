@@ -4,8 +4,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Build output (keep for npm distribution)
-# build/
+# Build output (included for npm distribution)
+# build/ - commented out to include in repository
 
 # Test coverage
 coverage/

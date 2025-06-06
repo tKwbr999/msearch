@@ -37,7 +37,7 @@
     "msearch": "./build/miyako-maps-search.js"
   },
   "files": [
-    "build/miyako-maps-search.js",
+    "build/",
     "README.md"
   ],
   "keywords": [
