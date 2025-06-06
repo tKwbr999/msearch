@@ -2,6 +2,10 @@
 
 <!-- GitHub/リポジトリ -->
 
+[![CI/CD Pipeline](https://github.com/tKwbr999/msearch/actions/workflows/ci-e2e-docker.yml/badge.svg)](https://github.com/tKwbr999/msearch/actions/workflows/ci-e2e-docker.yml)
+[![Unit Tests](https://github.com/tKwbr999/msearch/actions/workflows/ci-e2e-docker.yml/badge.svg?branch=develop&event=push)](https://github.com/tKwbr999/msearch/actions/workflows/ci-e2e-docker.yml)
+[![codecov](https://codecov.io/gh/tKwbr999/msearch/branch/develop/graph/badge.svg)](https://codecov.io/gh/tKwbr999/msearch)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/tKwbr999/msearch?style=social)](https://github.com/tKwbr999/msearch/stargazers)
 [![Forks](https://img.shields.io/github/forks/tKwbr999/msearch?style=social)](https://github.com/tKwbr999/msearch/network/members)
 [![Watchers](https://img.shields.io/github/watchers/tKwbr999/msearch?style=social)](https://github.com/tKwbr999/msearch/watchers)
@@ -10,12 +14,9 @@
 [![Contributors](https://img.shields.io/github/contributors/tKwbr999/msearch)](https://github.com/tKwbr999/msearch/graphs/contributors)
 [![Last Commit](https://img.shields.io/github/last-commit/tKwbr999/msearch)](https://github.com/tKwbr999/msearch/commits/main)
 [![Repo Size](https://img.shields.io/github/repo-size/tKwbr999/msearch)](https://github.com/tKwbr999/msearch)
-[![Code Lines](https://img.shields.io/tokei/lines/github/tKwbr999/msearch)](https://github.com/tKwbr999/msearch)
-[![License](https://img.shields.io/github/license/tKwbr999/msearch)](LICENSE)
 
 <!-- CI/CD・品質 -->
 
-[![CI](https://github.com/tKwbr999/msearch/actions/workflows/ci-e2e-docker.yml/badge.svg)](https://github.com/tKwbr999/msearch/actions/workflows/ci-e2e-docker.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/tKwbr999/msearch/pulls)
 
 <!-- 技術スタック -->
@@ -54,7 +55,7 @@
 - 🎨 **インタラクティブモード**: 人気カテゴリから簡単選択
 - ⚡ **高速インストール**: GitHub から直接インストール可能
 - 🧪 **テスト完備**: 22のテストで品質保証
-- 🚀 **自動CI/CD**: 開発からリリースまで自動化
+- �� **自動CI/CD**: 開発からリリースまで自動化
 
 ## インストール
 
