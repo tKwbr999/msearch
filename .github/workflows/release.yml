@@ -47,12 +47,12 @@ jobs:
             echo "should-release=true" >> $GITHUB_OUTPUT
             echo "🚀 Manual release triggered - proceeding with release"
           # 通常のpushイベントの場合
-          elif git diff HEAD~1 HEAD --name-only | grep -q "build/miyako-maps-search.js"; then
+          elif git diff HEAD~1 HEAD --name-only | grep -q "lib/miyako-maps-search.js"; then
             echo "should-release=true" >> $GITHUB_OUTPUT
-            echo "✅ build/miyako-maps-search.js has changes - proceeding with release"
+            echo "✅ lib/miyako-maps-search.js has changes - proceeding with release"
           else
             echo "should-release=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No changes in build/miyako-maps-search.js - skipping release"
+            echo "ℹ️ No changes in lib/miyako-maps-search.js - skipping release"
           fi
 
   release:
@@ -127,7 +127,7 @@ jobs:
             npm version "$NEW_VERSION" --no-git-tag-version
 
             # 変更をコミット（ビルド成果物も含める）
-            git add package.json package-lock.json build/
+            git add package.json package-lock.json lib/ bin/
             git commit -m "🔖 Bump version to ${{ steps.generate_version.outputs.new_version }}"
             git push origin main
           fi

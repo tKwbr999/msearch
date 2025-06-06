@@ -331,15 +331,44 @@ jobs:
             git commit -m "Auto-merge from develop after successful tests (resolved conflicts)"
           fi
           
-          # TypeScriptをビルドしてbuild/ディレクトリを更新
+          # TypeScriptをビルドしてlib/ディレクトリを更新
           npm install typescript@5.5.4 --no-save --no-optional
           npm run build
           
+          # bin/ディレクトリを作成（存在しない場合）
+          if [ ! -d "bin" ]; then
+            mkdir -p bin
+            cat > bin/msearch << 'EOF'
+#!/usr/bin/env node
+
+// msearch CLI entry point
+const path = require('path');
+const fs = require('fs');
+
+// Get the directory where this script is located
+const binDir = __dirname;
+const packageDir = path.dirname(binDir);
+const buildScript = path.join(packageDir, 'lib', 'miyako-maps-search.js');
+
+// Check if build script exists
+if (!fs.existsSync(buildScript)) {
+  console.error('Error: msearch build file not found at', buildScript);
+  console.error('Please reinstall msearch: npm install -g msearch');
+  process.exit(1);
+}
+
+// Execute the main script
+require(buildScript);
+EOF
+            chmod +x bin/msearch
+            echo "📁 Created bin/msearch entry point"
+          fi
+          
           # ビルド成果物をコミット
-          if ! git diff --quiet build/; then
+          if ! git diff --quiet lib/ bin/ 2>/dev/null; then
             echo "📦 Build output changed, committing..."
-            git add build/
-            git commit -m "🔨 Update build output from develop merge"
+            git add lib/ bin/
+            git commit -m "🔨 Update lib and bin output from develop merge"
           else
             echo "ℹ️ No build changes detected"
           fi
