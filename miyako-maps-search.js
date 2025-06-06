@@ -130,8 +130,19 @@ async function runInteractiveMode() {
     output: process.stdout
   });
 
+  // プロセス終了時にreadlineを確実にクリーンアップ
+  process.on('SIGINT', () => {
+    console.log('\n👋 インタラクティブモードを終了します');
+    rl.close();
+    process.exit(0);
+  });
+
   const askForInput = () => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      if (rl.closed) {
+        reject(new Error('readline was closed'));
+        return;
+      }
       rl.question('🔍 検索したいカテゴリの番号またはキーワードを入力してください (exit で終了): ', (answer) => {
         resolve(answer.trim());
       });
@@ -140,39 +151,55 @@ async function runInteractiveMode() {
 
   console.log('');
   
-  while (true) {
-    try {
-      const input = await askForInput();
-      
-      // 終了コマンド
-      if (input.toLowerCase() === 'exit' || input.toLowerCase() === 'quit' || input === '') {
-        console.log('👋 インタラクティブモードを終了します');
+  try {
+    while (true) {
+      try {
+        const input = await askForInput();
+        
+        // 終了コマンド
+        if (input.toLowerCase() === 'exit' || input.toLowerCase() === 'quit' || input === '') {
+          console.log('👋 インタラクティブモードを終了します');
+          rl.close();
+          process.exit(0);
+        }
+        
+        let searchKeyword = '';
+        
+        // 数字が入力された場合
+        const num = parseInt(input);
+        if (num >= 1 && num <= POPULAR_KEYWORDS.length) {
+          searchKeyword = POPULAR_KEYWORDS[num - 1].name;
+          console.log(`\n${POPULAR_KEYWORDS[num - 1].emoji} 「${searchKeyword}」を検索します...\n`);
+        } else {
+          // キーワードが直接入力された場合
+          searchKeyword = input;
+          console.log(`\n🔍 「${searchKeyword}」を検索します...\n`);
+        }
+        
+        // 検索実行（リスト表示）
+        try {
+          await searchPlacesInTerminal(searchKeyword, MIYAKOJIMA_BOUNDS);
+        } catch (searchError) {
+          console.error('❌ 検索中にエラーが発生しました:', searchError.message);
+          console.log('💡 ネットワーク接続を確認して再試行してください。');
+        }
+        
+        console.log('\n' + '='.repeat(50) + '\n');
+        
+      } catch (error) {
+        if (error.message.includes('readline was closed')) {
+          console.log('\n👋 インタラクティブモードを終了します');
+          process.exit(0);
+        }
+        console.error('❌ エラーが発生しました:', error.message);
         rl.close();
-        break;
+        process.exit(1);
       }
-      
-      let searchKeyword = '';
-      
-      // 数字が入力された場合
-      const num = parseInt(input);
-      if (num >= 1 && num <= POPULAR_KEYWORDS.length) {
-        searchKeyword = POPULAR_KEYWORDS[num - 1].name;
-        console.log(`\n${POPULAR_KEYWORDS[num - 1].emoji} 「${searchKeyword}」を検索します...\n`);
-      } else {
-        // キーワードが直接入力された場合
-        searchKeyword = input;
-        console.log(`\n🔍 「${searchKeyword}」を検索します...\n`);
-      }
-      
-      // 検索実行（リスト表示）
-      await searchPlacesInTerminal(searchKeyword, MIYAKOJIMA_BOUNDS);
-      
-      console.log('\n' + '='.repeat(50) + '\n');
-      
-    } catch (error) {
-      console.error('エラーが発生しました:', error.message);
-      console.log('もう一度お試しください。\n');
     }
+  } catch (error) {
+    console.error('❌ インタラクティブモードでエラーが発生しました:', error.message);
+    rl.close();
+    process.exit(1);
   }
 }
 
