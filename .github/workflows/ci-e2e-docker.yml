@@ -95,10 +95,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
 
-      - name: Install dependencies
-        run: make install
+      - name: Install minimal dependencies for E2E tests
+        run: |
+          # Playwrightは既にDockerイメージに含まれているため、jestとcheerioのみインストール
+          npm install jest@29.7.0 cheerio@1.0.0-rc.12 --no-save --silent
+        timeout-minutes: 2
 
       - name: Run E2E tests
         run: npm run test:e2e-ci

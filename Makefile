@@ -1,7 +1,7 @@
 # Makefile for msearch project
 # 宮古島Google Maps検索ツール開発用コマンド
 
-.PHONY: help install test lint fmt clean check dev check-ci
+.PHONY: help install test lint fmt clean check dev check-ci test-e2e-ci test-e2e-ci-docker
 
 # デフォルトターゲット
 help: ## このヘルプを表示
@@ -52,7 +52,19 @@ test-e2e-docker: ## PlaywrightのDockerイメージでE2Eテストを実行
 		-e CI=true \
 		-e PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
 		mcr.microsoft.com/playwright:v1.42.1-jammy \
-		/bin/bash -c "npm ci --no-audit --no-fund && npm run test:e2e-ci"
+		/bin/bash -c "npm install jest@29.7.0 cheerio@1.0.0-rc.12 --no-save --silent && npm run test:e2e-ci"
+
+test-e2e-ci: ## CI用の最小依存関係でE2Eテストを実行
+	@echo "🤖 Running E2E tests with minimal dependencies..."
+	@export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 && \
+	export PUPPETEER_SKIP_DOWNLOAD=1 && \
+	npm install jest@29.7.0 playwright@1.42.1 cheerio@1.0.0-rc.12 --no-save --silent && \
+	npm run test:e2e-ci
+
+test-e2e-ci-docker: ## Docker環境用の最小依存関係でE2Eテストを実行（Playwrightプリインストール済み）
+	@echo "🤖 Running E2E tests with minimal dependencies (Docker environment)..."
+	@npm install jest@29.7.0 cheerio@1.0.0-rc.12 --no-save --silent && \
+	npm run test:e2e-ci
 
 # 開発
 dev: ## 開発モードで実行
