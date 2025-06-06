@@ -27,19 +27,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: fmt-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
-      - name: Install Prettier
-        run: npm install prettier --no-save --silent
-        timeout-minutes: 1
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit --no-fund --silent
+        timeout-minutes: 3
 
       - name: Check formatting
-        run: npx prettier --check "**/*.{ts,json,md}" --ignore-path .prettierignore
+        run: npm run fmt:check
         timeout-minutes: 1
 
   # 並列実行グループ1: リントチェック
@@ -52,22 +47,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            .eslintcache
-          key: lint-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
-      - name: Install ESLint dependencies
-        run: |
-          npm install eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint-config-prettier eslint-plugin-prettier --no-save --silent
-        timeout-minutes: 2
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit --no-fund --silent
+        timeout-minutes: 3
 
       - name: Run lint
-        run: npx eslint . --ext .ts --ignore-path .eslintignore --cache
+        run: npm run lint
         timeout-minutes: 2
 
   # 並列実行グループ1: Dockerイメージビルド
