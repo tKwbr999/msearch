@@ -257,15 +257,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
+          ref: develop
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Merge to main
         run: |
-          echo "🚀 All tests passed! Ready for merge to main."
-          echo "Current branch: ${{ github.ref }}"
-          echo "Event: ${{ github.event_name }}"
-
-          # 実際のマージ処理
+          git fetch origin main:main
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git checkout main
