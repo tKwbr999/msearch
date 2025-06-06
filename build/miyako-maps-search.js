@@ -206,7 +206,7 @@ async function searchPlacesInTerminal(keyword, _bounds) {
         }
         // 重複URLの除去
         const uniqueResults = results.filter((place, index, arr) => {
-            return arr.findIndex(p => p.mapsUrl === place.mapsUrl) === index;
+            return arr.findIndex((p) => p.mapsUrl === place.mapsUrl) === index;
         });
         console.log(`${uniqueResults.length}件の結果が見つかりました:`);
         console.log('');
