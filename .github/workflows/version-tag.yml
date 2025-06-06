@@ -11,41 +11,39 @@ on:
 jobs:
   ci-checks:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
         with:
-          node-version: '20'
-          cache: 'npm'
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        id: cache-node-modules
-        with:
-          path: |
-            node_modules
-            ~/.npm
-          key: ${{ runner.os }}-deps-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-deps-
-
-      - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+      - name: Run checks in Docker
         run: |
-          export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-          export PLAYWRIGHT_SKIP_BROWSER_GC=1
-          npm ci --prefer-offline --no-audit --timeout=300000 --maxsockets=1
-        timeout-minutes: 8
-
-      - name: Run all checks including tests
-        run: |
-          export CI=true
-          export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-          export NODE_ENV=test
-          make check-all
-        timeout-minutes: 15
+          # Dockerイメージが存在する場合はそれを使用、なければフォールバック
+          if docker pull ghcr.io/${{ github.repository }}/e2e-test:latest 2>/dev/null; then
+            echo "🐳 Using Docker image for fast testing"
+            docker run --rm \
+              -v ${{ github.workspace }}:/app:ro \
+              -w /app \
+              ghcr.io/${{ github.repository }}/e2e-test:latest \
+              check-all
+          else
+            echo "📦 Fallback to traditional npm install"
+            # フォールバック: 従来の方法
+            export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+            export PLAYWRIGHT_SKIP_BROWSER_GC=1
+            npm ci --prefer-offline --no-audit --no-fund --silent
+            export CI=true NODE_ENV=test NPM_CONFIG_LOGLEVEL=error
+            make check-all
+          fi
+        timeout-minutes: 10
 
   merge-to-main:
     needs: ci-checks

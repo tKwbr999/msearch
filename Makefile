@@ -22,6 +22,9 @@ test-unit:
 test-e2e:
 	npm run test:e2e
 
+test-lightweight:
+	npm run test:lightweight
+
 test-watch:
 	npm run test:watch
 

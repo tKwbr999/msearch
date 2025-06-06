@@ -37,8 +37,9 @@ jobs:
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
           export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-          npm ci --prefer-offline --no-audit --timeout=300000 --maxsockets=1
-        timeout-minutes: 10
+          export PLAYWRIGHT_SKIP_BROWSER_GC=1
+          npm ci --prefer-offline --no-audit --no-fund --silent --timeout=300000 --maxsockets=1
+        timeout-minutes: 8
 
       - name: Configure Git
         run: |
