@@ -33,3 +33,29 @@ dev:
 
 start:
 	npm start
+
+install:
+	npm install -g .
+
+install-clean:
+	@echo "🗑️  Uninstalling existing msearch..."
+	-npm uninstall -g msearch 2>/dev/null || true
+	@echo "📦 Installing msearch from local source..."
+	npm install -g .
+	@echo "✅ msearch installed successfully!"
+	@echo "🧪 Testing installation..."
+	msearch --help
+
+reinstall: install-clean
+
+uninstall:
+	@echo "🗑️  Uninstalling msearch..."
+	npm uninstall -g msearch
+	@echo "✅ msearch uninstalled successfully!"
+
+check-install:
+	@echo "📋 Checking msearch installation..."
+	@which msearch || echo "❌ msearch not found in PATH"
+	@npm list -g msearch 2>/dev/null || echo "❌ msearch not installed globally"
+	@echo "🧪 Testing msearch command..."
+	@msearch --help || echo "❌ msearch command failed"
