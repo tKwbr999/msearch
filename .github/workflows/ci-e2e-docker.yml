@@ -341,23 +341,23 @@ jobs:
             cat > bin/msearch << 'EOF'
 #!/usr/bin/env node
 
-// msearch CLI entry point
+/* msearch CLI entry point */
 const path = require('path');
 const fs = require('fs');
 
-// Get the directory where this script is located
+/* Get the directory where this script is located */
 const binDir = __dirname;
 const packageDir = path.dirname(binDir);
 const buildScript = path.join(packageDir, 'lib', 'miyako-maps-search.js');
 
-// Check if build script exists
+/* Check if build script exists */
 if (!fs.existsSync(buildScript)) {
   console.error('Error: msearch build file not found at', buildScript);
   console.error('Please reinstall msearch: npm install -g msearch');
   process.exit(1);
 }
 
-// Execute the main script
+/* Execute the main script */
 require(buildScript);
 EOF
             chmod +x bin/msearch
