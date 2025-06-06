@@ -7,6 +7,7 @@
 const { execSync } = require('child_process');
 const { chromium } = require('playwright');
 const { argv } = require('process');
+const readline = require('readline');
 
 // Miyako Islands coordinate bounds (宮古諸島全域の緯度経度範囲)
 // Includes: 宮古島、下地島、伊良部島、多良間村、池間島、来間島
@@ -124,28 +125,55 @@ function showInteractiveMenu() {
 async function runInteractiveMode() {
   showInteractiveMenu();
   
-  // 簡単な入力プロンプト（readline不要）
-  console.log('🔍 検索したいカテゴリの番号またはキーワードを入力してください:');
-  
-  // 実際の対話機能の代わりに、一般的な使用例を表示
-  console.log('');
-  console.log('📋 よく使われる検索例:');
-  console.log('');
-  
-  const examples = [
-    'msearch レストラン -l',
-    'msearch カフェ -l', 
-    'msearch コンビニ -l',
-    'msearch 観光スポット -l',
-    'msearch ビーチ -l'
-  ];
-  
-  examples.forEach((example, index) => {
-    console.log(`${index + 1}. ${example}`);
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
   });
-  
+
+  const askForInput = () => {
+    return new Promise((resolve) => {
+      rl.question('🔍 検索したいカテゴリの番号またはキーワードを入力してください (exit で終了): ', (answer) => {
+        resolve(answer.trim());
+      });
+    });
+  };
+
   console.log('');
-  console.log('💡 上記のコマンドをコピーして実行してください！');
+  
+  while (true) {
+    try {
+      const input = await askForInput();
+      
+      // 終了コマンド
+      if (input.toLowerCase() === 'exit' || input.toLowerCase() === 'quit' || input === '') {
+        console.log('👋 インタラクティブモードを終了します');
+        rl.close();
+        break;
+      }
+      
+      let searchKeyword = '';
+      
+      // 数字が入力された場合
+      const num = parseInt(input);
+      if (num >= 1 && num <= POPULAR_KEYWORDS.length) {
+        searchKeyword = POPULAR_KEYWORDS[num - 1].name;
+        console.log(`\n${POPULAR_KEYWORDS[num - 1].emoji} 「${searchKeyword}」を検索します...\n`);
+      } else {
+        // キーワードが直接入力された場合
+        searchKeyword = input;
+        console.log(`\n🔍 「${searchKeyword}」を検索します...\n`);
+      }
+      
+      // 検索実行（リスト表示）
+      await searchPlacesInTerminal(searchKeyword, MIYAKOJIMA_BOUNDS);
+      
+      console.log('\n' + '='.repeat(50) + '\n');
+      
+    } catch (error) {
+      console.error('エラーが発生しました:', error.message);
+      console.log('もう一度お試しください。\n');
+    }
+  }
 }
 
 async function scrapeGoogleMapsResults(searchUrl) {
