@@ -1,0 +1,42 @@
+{
+  "name": "msearch",
+  "version": "1.0.0",
+  "description": "宮古諸島専用Google Mapsコマンドライン検索ツール",
+  "main": "miyako-maps-search.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tKwbr999/msearch.git"
+  },
+  "homepage": "https://github.com/tKwbr999/msearch",
+  "bugs": {
+    "url": "https://github.com/tKwbr999/msearch/issues"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node miyako-maps-search.js",
+    "dev": "ts-node miyako-maps-search.ts",
+    "prepare": "npm run build",
+    "postinstall": "npm run build"
+  },
+  "bin": {
+    "msearch": "./miyako-maps-search.js"
+  },
+  "files": [
+    "miyako-maps-search.js",
+    "miyako-maps-search.ts",
+    "tsconfig.json",
+    "README.md"
+  ],
+  "keywords": ["cli", "maps", "google-maps", "search", "miyako", "okinawa", "japan", "宮古島"],
+  "author": "tKwbr999",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.44.0",
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.0.0"
+  }
+}
