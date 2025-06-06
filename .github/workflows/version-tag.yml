@@ -9,11 +9,15 @@ on:
       - main
 
 jobs:
-  ci-checks:
+  # フォーマットとリント（並列実行）
+  lint-and-format:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: read
+    strategy:
+      matrix:
+        check: [lint, fmt]
     steps:
       - uses: actions/checkout@v4
 
@@ -24,29 +28,65 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run checks in Docker
+      - name: Run ${{ matrix.check }} in Docker
         run: |
-          # Dockerイメージが存在する場合はそれを使用、なければフォールバック
           if docker pull ghcr.io/${{ github.repository }}/e2e-test:latest 2>/dev/null; then
-            echo "🐳 Using Docker image for fast testing"
+            echo "🐳 Using Docker image for ${{ matrix.check }}"
             docker run --rm \
               -v ${{ github.workspace }}:/app:ro \
               -w /app \
               ghcr.io/${{ github.repository }}/e2e-test:latest \
-              check-all
+              ${{ matrix.check }}
           else
-            echo "📦 Fallback to traditional npm install"
-            # フォールバック: 従来の方法
+            echo "📦 Fallback to npm for ${{ matrix.check }}"
             export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-            export PLAYWRIGHT_SKIP_BROWSER_GC=1
             npm ci --prefer-offline --no-audit --no-fund --silent
-            export CI=true NODE_ENV=test NPM_CONFIG_LOGLEVEL=error
-            make check-all
+            make ${{ matrix.check }}
           fi
-        timeout-minutes: 10
+        timeout-minutes: 5
+
+  # テスト（種類別並列実行）
+  parallel-tests:
+    runs-on: ubuntu-latest
+    needs: lint-and-format
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      matrix:
+        test-type: [unit, lightweight, e2e-ci]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run ${{ matrix.test-type }} tests in Docker
+        run: |
+          if docker pull ghcr.io/${{ github.repository }}/e2e-test:latest 2>/dev/null; then
+            echo "🐳 Running ${{ matrix.test-type }} tests in Docker"
+            docker run --rm \
+              -v ${{ github.workspace }}:/app:ro \
+              -w /app \
+              -e CI=true \
+              -e NODE_ENV=test \
+              ghcr.io/${{ github.repository }}/e2e-test:latest \
+              test:${{ matrix.test-type }}
+          else
+            echo "📦 Fallback to npm for ${{ matrix.test-type }} tests"
+            export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+            npm ci --prefer-offline --no-audit --no-fund --silent
+            export CI=true NODE_ENV=test
+            npm run test:${{ matrix.test-type }}
+          fi
+        timeout-minutes: 8
 
   merge-to-main:
-    needs: ci-checks
+    needs: [lint-and-format, parallel-tests]
     if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     permissions:

@@ -4,6 +4,18 @@ check:
 check-all:
 	make lint && make fmt-check && make test
 
+# 並列実行用のターゲット
+parallel-tests:
+	npm run test:unit & \
+	npm run test:lightweight & \
+	npm run test:e2e-ci & \
+	wait
+
+parallel-checks:
+	make lint & \
+	make fmt-check & \
+	wait
+
 lint:
 	npm run lint
 

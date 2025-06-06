@@ -30,9 +30,17 @@ case "${1:-test}" in
     echo "⚡ Running lightweight tests..."
     npm run test:lightweight
     ;;
+  "test:e2e-ci")
+    echo "🚀 Running CI-optimized E2E tests..."
+    npm run test:e2e-ci
+    ;;
   "lint")
     echo "🔍 Running linting..."
     npm run lint
+    ;;
+  "fmt")
+    echo "🎨 Running formatting..."
+    npm run fmt:check
     ;;
   "check-all")
     echo "✅ Running all checks..."
