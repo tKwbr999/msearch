@@ -284,5 +284,17 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git checkout main
-          git merge --no-ff develop -m "Auto-merge from develop after successful tests"
+          
+          # developブランチの変更を優先してマージ
+          git merge develop -X theirs -m "Auto-merge from develop after successful tests"
+          
+          # コンフリクトが発生した場合の追加処理
+          if [ $? -ne 0 ]; then
+            echo "Merge conflict detected, resolving..."
+            # package.jsonのコンフリクトを自動解決（developブランチを優先）
+            git checkout develop -- package.json
+            git add package.json
+            git commit -m "Auto-merge from develop after successful tests (resolved conflicts)"
+          fi
+          
           git push origin main
