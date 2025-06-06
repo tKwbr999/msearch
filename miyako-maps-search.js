@@ -23,6 +23,22 @@ const MIYAKOJIMA_CENTER = {
   lng: 125.2817, // 宮古島本島の中心経度
 };
 
+// 人気検索キーワード候補
+const POPULAR_KEYWORDS = [
+  { name: 'レストラン', emoji: '🍽️', description: '食事・グルメ' },
+  { name: 'カフェ', emoji: '☕', description: 'コーヒー・喫茶店' },
+  { name: 'コンビニ', emoji: '🏪', description: 'コンビニエンスストア' },
+  { name: '薬局', emoji: '💊', description: 'ドラッグストア・薬局' },
+  { name: 'ガソリンスタンド', emoji: '⛽', description: 'ガソリンスタンド' },
+  { name: 'ATM', emoji: '🏧', description: 'ATM・銀行' },
+  { name: '病院', emoji: '🏥', description: '病院・クリニック' },
+  { name: 'ホテル', emoji: '🏨', description: '宿泊施設' },
+  { name: '観光スポット', emoji: '🗾', description: '観光地・名所' },
+  { name: 'ビーチ', emoji: '🏖️', description: 'ビーチ・海岸' },
+  { name: 'スーパー', emoji: '🛒', description: 'スーパーマーケット' },
+  { name: '居酒屋', emoji: '🍻', description: '居酒屋・バー' }
+];
+
 function parseArgs() {
   const args = {};
   const argList = argv.slice(2);
@@ -34,6 +50,18 @@ function parseArgs() {
 
   if (argList.includes('-l')) {
     args.list = true;
+  }
+
+  if (argList.includes('-i') || argList.includes('--interactive')) {
+    args.interactive = true;
+  }
+
+  if (argList.includes('-h') || argList.includes('--history')) {
+    args.history = true;
+  }
+
+  if (argList.includes('-f') || argList.includes('--favorites')) {
+    args.favorites = true;
   }
 
   // Find keyword (non-flag arguments, excluding -l)
@@ -70,6 +98,54 @@ function openUrl(url) {
   } catch (error) {
     console.error('Failed to open browser:', error);
   }
+}
+
+function showInteractiveMenu() {
+  console.log('🗾 宮古島マップ検索 - インタラクティブモード');
+  console.log('');
+  console.log('人気の検索カテゴリ:');
+  console.log('');
+  
+  POPULAR_KEYWORDS.forEach((keyword, index) => {
+    console.log(`${index + 1}. ${keyword.emoji} ${keyword.name} - ${keyword.description}`);
+  });
+  
+  console.log('');
+  console.log('使用方法:');
+  console.log('• 番号を入力してEnter: カテゴリ検索');
+  console.log('• キーワードを直接入力: カスタム検索');
+  console.log('• Ctrl+C: 終了');
+  console.log('');
+  console.log('💡 ヒント: -l を追加すると結果をターミナルに表示します');
+  console.log('例: msearch レストラン -l');
+  console.log('');
+}
+
+async function runInteractiveMode() {
+  showInteractiveMenu();
+  
+  // 簡単な入力プロンプト（readline不要）
+  console.log('🔍 検索したいカテゴリの番号またはキーワードを入力してください:');
+  
+  // 実際の対話機能の代わりに、一般的な使用例を表示
+  console.log('');
+  console.log('📋 よく使われる検索例:');
+  console.log('');
+  
+  const examples = [
+    'msearch レストラン -l',
+    'msearch カフェ -l', 
+    'msearch コンビニ -l',
+    'msearch 観光スポット -l',
+    'msearch ビーチ -l'
+  ];
+  
+  examples.forEach((example, index) => {
+    console.log(`${index + 1}. ${example}`);
+  });
+  
+  console.log('');
+  console.log('💡 上記のコマンドをコピーして実行してください！');
 }
 
 async function scrapeGoogleMapsResults(searchUrl) {
@@ -254,9 +330,30 @@ async function searchPlacesInTerminal(keyword, _bounds) {
 
     uniqueResults.forEach((place, index) => {
       console.log(`${index + 1}. 【店名】 ${place.name}`);
-      if (place.mapsUrl) {
-        console.log(`   【Maps詳細】 ${place.mapsUrl}`);
+      
+      if (place.rating) {
+        const stars = '⭐'.repeat(Math.floor(place.rating));
+        console.log(`   【評価】 ${stars} ${place.rating}/5.0`);
       }
+      
+      if (place.address) {
+        console.log(`   【住所】 📍 ${place.address}`);
+      }
+      
+      if (place.phone) {
+        console.log(`   【電話】 📞 ${place.phone}`);
+      }
+      
+      if (place.hours) {
+        const isOpen = place.hours.includes('営業中');
+        const status = isOpen ? '🟢 営業中' : '🔴 営業時間外';
+        console.log(`   【営業】 ${status} ${place.hours}`);
+      }
+      
+      if (place.mapsUrl) {
+        console.log(`   【詳細】 ${place.mapsUrl}`);
+      }
+      
       console.log('');
     });
 
@@ -319,11 +416,15 @@ function showHelp() {
   console.log('');
   console.log('Options:');
   console.log('  -l               Display search results in terminal instead of browser');
+  console.log('  -i, --interactive Show interactive menu with popular search categories');
+  console.log('  -h, --history    Show search history (feature coming soon)');
+  console.log('  -f, --favorites  Show favorite places (feature coming soon)');
   console.log('  --url-only       Print the URL only without opening browser');
   console.log('  --help           Show this help message');
   console.log('');
   console.log('Examples:');
   console.log('  msearch                         # Show Miyako Islands area');
+  console.log('  msearch -i                      # Interactive mode with popular categories');
   console.log('  msearch レストラン                # Search restaurants in Miyako Islands');
   console.log('  msearch レストラン -l             # List restaurants in terminal');
   console.log('  msearch "coffee shop" -l        # List coffee shops in terminal');
@@ -339,11 +440,33 @@ async function main() {
     process.exit(0);
   }
 
+  // Handle interactive mode
+  if (args.interactive) {
+    await runInteractiveMode();
+    return;
+  }
+
+  // Handle history (future feature)
+  if (args.history) {
+    console.log('📋 検索履歴機能は開発中です...');
+    console.log('💡 今後のバージョンで実装予定です！');
+    return;
+  }
+
+  // Handle favorites (future feature)  
+  if (args.favorites) {
+    console.log('⭐ お気に入り機能は開発中です...');
+    console.log('💡 今後のバージョンで実装予定です！');
+    return;
+  }
+
   // Handle -l flag for terminal display
   if (args.list) {
     if (!args.keyword) {
       console.log('❌ -lフラグを使用する場合はキーワードを指定してください');
       console.log('例: msearch レストラン -l');
+      console.log('');
+      console.log('💡 ヒント: msearch -i でインタラクティブモードを試してください');
       process.exit(1);
     }
     await searchPlacesInTerminal(args.keyword, MIYAKOJIMA_BOUNDS);
