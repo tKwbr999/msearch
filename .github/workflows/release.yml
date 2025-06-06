@@ -15,12 +15,50 @@ on:
       - 'miyako-maps-search.ts'
       - 'package.json'
       - 'tsconfig.json'
+  workflow_dispatch:
+    inputs:
+      force_release:
+        description: 'Force release even without build changes'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    # CIからの自動マージまたは手動実行の場合のみ実行
+    if: contains(github.event.head_commit.message, 'Auto-merge from develop') || github.event_name == 'workflow_dispatch'
+    outputs:
+      should-release: ${{ steps.check.outputs.should-release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Check if build file changed
+        id: check
+        run: |
+          # 手動実行でforce_releaseがtrueの場合は強制実行
+          if [[ "${{ github.event.inputs.force_release }}" == "true" ]]; then
+            echo "should-release=true" >> $GITHUB_OUTPUT
+            echo "🚀 Force release enabled - proceeding with release"
+          # 手動実行の場合（force_releaseがfalseまたは未設定）
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should-release=true" >> $GITHUB_OUTPUT
+            echo "🚀 Manual release triggered - proceeding with release"
+          # 通常のpushイベントの場合
+          elif git diff HEAD~1 HEAD --name-only | grep -q "build/miyako-maps-search.js"; then
+            echo "should-release=true" >> $GITHUB_OUTPUT
+            echo "✅ build/miyako-maps-search.js has changes - proceeding with release"
+          else
+            echo "should-release=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No changes in build/miyako-maps-search.js - skipping release"
+          fi
+
   release:
     runs-on: ubuntu-latest
-    # CIからの自動マージの場合のみ実行
-    if: contains(github.event.head_commit.message, 'Auto-merge from develop')
+    needs: check-changes
+    if: needs.check-changes.outputs.should-release == 'true'
     permissions:
       contents: write
       pull-requests: write
