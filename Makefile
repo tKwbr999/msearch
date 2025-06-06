@@ -1,5 +1,5 @@
 check:
-	make lint && make fmt-check && make build
+	make lint && make fmt-check
 
 lint:
 	npm run lint
@@ -10,9 +10,6 @@ fmt:
 fmt-check:
 	npm run fmt:check
 
-build:
-	npm run build
-
 dev:
 	npm run dev
 
@@ -20,4 +17,4 @@ start:
 	npm start
 
 check-all:
-	make lint && make fmt-check && make build
+	make lint && make fmt-check
