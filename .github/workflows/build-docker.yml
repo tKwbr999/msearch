@@ -32,7 +32,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/msearch-e2e
+          images: ghcr.io/${{ github.repository_owner | downcase }}/msearch-e2e
           tags: |
             type=ref,event=branch
             type=sha,prefix=sha-
