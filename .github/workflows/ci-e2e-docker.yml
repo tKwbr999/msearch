@@ -15,165 +15,114 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
 
 jobs:
   # 並列実行グループ1: フォーマットチェック
   format-check:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --prefer-offline --no-audit --no-fund --silent
-        timeout-minutes: 3
+        run: npm ci --no-audit --no-fund
 
       - name: Check formatting
         run: npm run fmt:check
-        timeout-minutes: 1
 
   # 並列実行グループ1: リントチェック
   lint-check:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --prefer-offline --no-audit --no-fund --silent
-        timeout-minutes: 3
+        run: npm ci --no-audit --no-fund
 
-      - name: Run lint
+      - name: Run linting
         run: npm run lint
-        timeout-minutes: 2
-
-  # 並列実行グループ1: Dockerイメージビルド
-  docker-build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    outputs:
-      image-tag: ${{ steps.image-info.outputs.tag }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set repository info
-        id: image-info
-        run: |
-          REPO_OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE_TAG="ghcr.io/${REPO_OWNER_LOWER}/msearch-e2e:latest"
-          echo "tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
-          echo "repo-owner=${REPO_OWNER_LOWER}" >> $GITHUB_OUTPUT
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile.e2e
-          push: true
-          tags: ${{ steps.image-info.outputs.tag }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-
-  # E2Eテスト: Dockerイメージ完成後に実行
-  e2e-tests:
-    runs-on: ubuntu-latest
-    needs: [docker-build]
-    permissions:
-      contents: read
-      packages: read
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run E2E tests
-        run: |
-          echo "🐳 Running E2E tests with Playwright in Docker"
-          docker run --rm \
-            -v ${{ github.workspace }}:/app:ro \
-            -w /app \
-            -e CI=true \
-            -e NODE_ENV=test \
-            ${{ needs.docker-build.outputs.image-tag }} \
-            test:e2e-ci
-        timeout-minutes: 10
 
   # その他テスト: lint/format完了後に実行
   unit-tests:
     runs-on: ubuntu-latest
     needs: [format-check, lint-check]
-    strategy:
-      matrix:
-        test-type: [unit, lightweight]
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
       - name: Install dependencies
-        run: |
-          export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-          export PUPPETEER_SKIP_DOWNLOAD=1
-          npm ci --prefer-offline --no-audit --no-fund --silent
-        timeout-minutes: 3
+        run: npm ci --no-audit --no-fund
 
-      - name: Run ${{ matrix.test-type }} tests
-        run: |
-          export CI=true NODE_ENV=test
-          npm run test:${{ matrix.test-type }}
-        timeout-minutes: 5
+      - name: Run unit tests
+        run: npm run test:unit
+
+  # E2Eテスト: Dockerイメージ完成後に実行
+  e2e-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.42.1-jammy
+      options: --user 1001
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run E2E tests
+        run: npm run test:e2e-ci
+        env:
+          CI: true
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
   # 全テスト完了後: develop→main自動マージ
   merge-to-main:
-    needs: [format-check, lint-check, docker-build, e2e-tests, unit-tests]
-    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    needs: [unit-tests, e2e-tests]
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Configure Git
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
 
       - name: Merge to main
         run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git checkout main
-          git merge develop --no-ff -m "🔀 Merge develop to main [skip ci]"
+          git merge --no-ff ${{ github.head_ref }} -m "Merge pull request #${{ github.event.number }} from ${{ github.head_ref }}"
           git push origin main

@@ -27,8 +27,6 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --maxWorkers=2 --testTimeout=10000",
-    "docker:build": "docker build -f Dockerfile.e2e -t msearch-e2e .",
-    "docker:test": "docker run --rm -v $(pwd):/app:ro -w /app msearch-e2e test:lightweight",
     "lint": "eslint . --ext .ts --ignore-path .eslintignore",
     "lint:fix": "eslint . --ext .ts --fix --ignore-path .eslintignore",
     "fmt": "prettier --write \"**/*.{ts,json,md}\" --ignore-path .prettierignore",

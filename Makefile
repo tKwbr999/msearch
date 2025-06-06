@@ -1,7 +1,7 @@
 # Makefile for msearch project
 # 宮古島Google Maps検索ツール開発用コマンド
 
-.PHONY: help install build test lint fmt clean check check-all dev
+.PHONY: help install build test lint fmt clean check check-all dev test-e2e-docker
 
 # デフォルトターゲット
 help: ## このヘルプを表示
@@ -66,14 +66,16 @@ start: ## アプリケーションを開始
 	@echo "▶️  Starting application..."
 	npm start
 
-# Docker関連
-docker-build: ## Dockerイメージをビルド
-	@echo "🐳 Building Docker image..."
-	npm run docker:build
-
-docker-test: ## Dockerでテストを実行
-	@echo "🐳 Running tests in Docker..."
-	npm run docker:test
+# Docker関連（Playwright公式イメージ使用）
+test-e2e-docker: ## PlaywrightのDockerイメージでE2Eテストを実行
+	@echo "🐳 Running E2E tests with Playwright Docker image..."
+	docker run --rm \
+		-v $(PWD):/workspace \
+		-w /workspace \
+		-e CI=true \
+		-e PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+		mcr.microsoft.com/playwright:v1.42.1-jammy \
+		/bin/bash -c "npm ci --no-audit --no-fund && npm run test:e2e-ci"
 
 # チェック系
 check: fmt-check lint ## フォーマットとリントをチェック
