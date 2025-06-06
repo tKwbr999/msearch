@@ -1,7 +1,7 @@
 # Makefile for msearch project
 # 宮古島Google Maps検索ツール開発用コマンド
 
-.PHONY: help install test lint fmt clean check dev check-ci test-e2e-ci test-e2e-ci-docker
+.PHONY: help install test lint fmt clean check dev check-ci test-e2e-ci test-e2e-ci-docker test-unit-ci
 
 # デフォルトターゲット
 help: ## このヘルプを表示
@@ -65,6 +65,11 @@ test-e2e-ci-docker: ## Docker環境用の最小依存関係でE2Eテストを実
 	@echo "🤖 Running E2E tests with minimal dependencies (Docker environment)..."
 	@npm install jest@29.7.0 cheerio@1.0.0-rc.12 --no-save --silent && \
 	npm run test:e2e-ci
+
+test-unit-ci: ## CI用の最小依存関係で単体テストを実行
+	@echo "🤖 Running unit tests with minimal dependencies..."
+	@npm install jest@29.7.0 --no-save --silent && \
+	npm run test:unit
 
 # 開発
 dev: ## 開発モードで実行
