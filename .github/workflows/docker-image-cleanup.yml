@@ -16,7 +16,7 @@ jobs:
       - name: Delete old container images
         uses: actions/delete-package-versions@v5
         with:
-          package-name: 'msearch/e2e-test'
+          package-name: 'msearch-e2e'
           package-type: 'container'
           min-versions-to-keep: 3
           delete-only-untagged-versions: false

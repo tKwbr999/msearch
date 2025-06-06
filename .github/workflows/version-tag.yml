@@ -30,7 +30,7 @@ jobs:
       - name: Check if image exists
         id: check-image
         run: |
-          if docker pull ghcr.io/${{ github.repository }}/e2e-test:latest 2>/dev/null; then
+          if docker pull ghcr.io/${{ github.repository_owner }}/msearch-e2e:latest 2>/dev/null; then
             echo "exists=true" >> $GITHUB_OUTPUT
             echo "🐳 Docker image already exists"
           else
@@ -49,12 +49,12 @@ jobs:
           context: .
           file: ./Dockerfile.e2e
           push: true
-          tags: ghcr.io/${{ github.repository }}/e2e-test:latest
+          tags: ghcr.io/${{ github.repository_owner }}/msearch-e2e:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
 
-  # フォーマットとリント（Dockerなしで高速実行）
+  # フォーマットとリント（最小依存関係で超高速実行）
   lint-and-format:
     runs-on: ubuntu-latest
     strategy:
@@ -67,16 +67,37 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      - name: Install dependencies (lint/fmt only)
+      - name: Cache lint dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            .eslintcache
+          key: lint-${{ matrix.check }}-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            lint-${{ matrix.check }}-${{ runner.os }}-
+
+      - name: Install ${{ matrix.check }} dependencies only
         run: |
           export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-          npm ci --prefer-offline --no-audit --no-fund --silent
-        timeout-minutes: 3
+          export PUPPETEER_SKIP_DOWNLOAD=1
+          if [ "${{ matrix.check }}" == "lint" ]; then
+            # ESLint関連のみインストール
+            npm install eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint-config-prettier eslint-plugin-prettier --no-save --silent
+          else
+            # Prettier関連のみインストール
+            npm install prettier --no-save --silent
+          fi
+        timeout-minutes: 2
 
       - name: Run ${{ matrix.check }}
-        run: make ${{ matrix.check }}
+        run: |
+          if [ "${{ matrix.check }}" == "lint" ]; then
+            npx eslint . --ext .ts --ignore-path .eslintignore --cache
+          else
+            npx prettier --check "**/*.{ts,json,md}" --ignore-path .prettierignore
+          fi
         timeout-minutes: 2
 
   # テスト（種類別並列実行、Dockerイメージビルド後）
@@ -102,14 +123,14 @@ jobs:
       - name: Run ${{ matrix.test-type }} tests
         run: |
           # Dockerイメージが利用可能な場合は使用
-          if [ "${{ needs.build-docker-image.outputs.image-exists }}" == "true" ] || docker pull ghcr.io/${{ github.repository }}/e2e-test:latest 2>/dev/null; then
+          if [ "${{ needs.build-docker-image.outputs.image-exists }}" == "true" ] || docker pull ghcr.io/${{ github.repository_owner }}/msearch-e2e:latest 2>/dev/null; then
             echo "🐳 Running ${{ matrix.test-type }} tests in Docker"
             docker run --rm \
               -v ${{ github.workspace }}:/app:ro \
               -w /app \
               -e CI=true \
               -e NODE_ENV=test \
-              ghcr.io/${{ github.repository }}/e2e-test:latest \
+              ghcr.io/${{ github.repository_owner }}/msearch-e2e:latest \
               test:${{ matrix.test-type }}
           else
             echo "📦 Fallback to npm for ${{ matrix.test-type }} tests"
