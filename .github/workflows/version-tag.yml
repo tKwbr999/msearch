@@ -35,11 +35,17 @@ jobs:
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
           export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+          export PLAYWRIGHT_SKIP_BROWSER_GC=1
           npm ci --prefer-offline --no-audit --timeout=300000 --maxsockets=1
-        timeout-minutes: 10
+        timeout-minutes: 8
 
       - name: Run all checks including tests
-        run: make check-all
+        run: |
+          export CI=true
+          export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+          export NODE_ENV=test
+          make check-all
+        timeout-minutes: 15
 
   merge-to-main:
     needs: ci-checks
