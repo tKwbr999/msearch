@@ -11,6 +11,9 @@ build/
 coverage/
 *.lcov
 
+# Claude AI memory file (keep in repository)
+# CLAUDE.md
+
 # Runtime data
 pids
 *.pid
