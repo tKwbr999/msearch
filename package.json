@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build": "npx tsc",
+    "prepublishOnly": "npm run build",
     "start": "node build/miyako-maps-search.js",
     "dev": "ts-node miyako-maps-search.ts",
     "lint": "eslint . --ext .ts --ignore-path .eslintignore",
@@ -24,9 +25,7 @@
     "msearch": "./build/miyako-maps-search.js"
   },
   "files": [
-    "miyako-maps-search.js",
-    "miyako-maps-search.ts",
-    "tsconfig.json",
+    "build/",
     "README.md"
   ],
   "keywords": [
