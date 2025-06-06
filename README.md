@@ -287,14 +287,47 @@ msearch "薬局" -l               # 薬局をターミナルに一覧
 
 ## 🔧 開発
 
+### 開発フロー
+
+**ブランチ構成:**
+- `main`: 本番用ブランチ（自動リリース）
+- `develop`: 開発用ブランチ
+
+**開発手順:**
+```bash
+# 1. developブランチで開発
+git checkout develop
+git pull origin develop
+
+# 2. 機能開発・修正
+# ファイルを編集...
+
+# 3. developにコミット・プッシュ
+git add .
+git commit -m "機能追加: 新しい機能の説明"
+git push origin develop
+
+# 4. 自動リリース
+# CI通過後、自動的にバージョンアップしてmainブランチにマージされます
+```
+
+**自動化されるプロセス:**
+1. `develop`ブランチへのプッシュでCI実行
+2. Lint、Format、その他チェック実行
+3. 全チェック通過後：
+   - パッチバージョンを自動増加（0.7.0 → 0.7.1）
+   - `package.json`のバージョン更新
+   - Gitタグ作成
+   - `main`ブランチに自動マージ
+
 ### 開発モード
 
 ```bash
 # TypeScriptで直接実行
 npm run dev
 
-# 変更を監視してビルド
-npm run build
+# ローカルテスト
+node miyako-maps-search.js --help
 ```
 
 ### プロジェクト構造
