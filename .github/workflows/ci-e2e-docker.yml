@@ -129,7 +129,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org/'
 
-            - name: Configure npm for CI
+      - name: Configure npm for CI
         run: |
           npm config set registry https://registry.npmjs.org/
           npm config set fetch-retry-mintimeout 20000
@@ -193,7 +193,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org/'
 
-            - name: Configure npm for CI
+      - name: Configure npm for CI
         run: |
           npm config set registry https://registry.npmjs.org/
           npm config set fetch-retry-mintimeout 20000
