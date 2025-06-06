@@ -95,8 +95,11 @@ jobs:
         run: |
           if [ "${{ matrix.check }}" == "lint" ]; then
             npx eslint . --ext .ts --ignore-path .eslintignore --cache
-          else
+          elif [ "${{ matrix.check }}" == "fmt" ]; then
             npx prettier --check "**/*.{ts,json,md}" --ignore-path .prettierignore
+          else
+            echo "Unknown check: ${{ matrix.check }}"
+            exit 1
           fi
         timeout-minutes: 2
 

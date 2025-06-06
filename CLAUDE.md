@@ -9,21 +9,23 @@
 **説明**: 宮古諸島エリア専用 Google Maps 検索CLI ツール  
 **リポジトリ**: https://github.com/tKwbr999/msearch  
 **言語**: JavaScript (Node.js)  
-**現在バージョン**: v0.7.1  
+**現在バージョン**: v0.7.1
 
 ## 🏝️ 地理的設定
 
 ### 座標境界（MIYAKOJIMA_BOUNDS）
+
 ```javascript
 {
   north: 24.9417,  // 24°56'30"N (多良間島北端)
-  south: 24.65,    // 24°39'00"N (宮古島南端) 
+  south: 24.65,    // 24°39'00"N (宮古島南端)
   east: 125.475,   // 125°28'30"E (宮古島東端)
   west: 124.6833   // 124°41'00"E (多良間島西端)
 }
 ```
 
 ### 中心座標（MIYAKOJIMA_CENTER）
+
 ```javascript
 {
   lat: 24.805,     // 宮古島本島の中心緯度
@@ -32,11 +34,13 @@
 ```
 
 ### 対象エリア
+
 宮古島、池間島、来間島、伊良部島、下地島、多良間島、水納島
 
 ## 🚀 主要機能
 
 ### コマンドオプション
+
 - **基本検索**: `msearch [keyword]` - ブラウザでマップを開く
 - **リスト表示**: `msearch [keyword] -l` - ターミナルに結果表示
 - **インタラクティブ**: `msearch -i` - 対話式カテゴリ選択
@@ -44,17 +48,20 @@
 - **ヘルプ**: `msearch --help`
 
 ### 人気カテゴリ（12種類）
+
 1. 🍽️ レストラン 2. ☕ カフェ 3. 🏪 コンビニ 4. 💊 薬局
-5. ⛽ ガソリンスタンド 6. 🏧 ATM 7. 🏥 病院 8. 🏨 ホテル
-9. 🗾 観光スポット 10. 🏖️ ビーチ 11. 🛒 スーパー 12. 🍻 居酒屋
+2. ⛽ ガソリンスタンド 6. 🏧 ATM 7. 🏥 病院 8. 🏨 ホテル
+3. 🗾 観光スポット 10. 🏖️ ビーチ 11. 🛒 スーパー 12. 🍻 居酒屋
 
 ## 🛠️ 技術スタック
 
 ### 依存関係
+
 - **プロダクション**: `playwright` (v1.42.1), `cheerio` (v1.0.0-rc.12)
 - **開発**: `jest` (v29.7.0), `puppeteer` (v21.11.0), `typescript`, `eslint`, `prettier`
 
 ### 主要ファイル
+
 - **実行ファイル**: `miyako-maps-search.js`
 - **バイナリ**: `bin: { "msearch": "./miyako-maps-search.js" }`
 - **テスト**: `tests/unit/` (11個), `tests/e2e/` (11個)
@@ -63,18 +70,21 @@
 ## 🔧 開発ワークフロー
 
 ### ブランチ構成
+
 - **develop**: 開発ブランチ（作業用）
 - **main**: 本番ブランチ（自動リリース）
 
 ### CI/CD（2段階）
+
 1. **develop→main**: テスト・リント・フォーマットチェック → 自動マージ
 2. **main→release**: バージョン自動アップ → タグ作成 → GitHub Release
 
 ### Makefileコマンド
+
 ```bash
 make test          # 全テスト実行
 make test-unit     # 単体テスト
-make test-e2e      # E2Eテスト  
+make test-e2e      # E2Eテスト
 make test-coverage # カバレッジ付きテスト
 make lint          # ESLint実行
 make fmt           # Prettier実行
@@ -88,6 +98,7 @@ make check-install # インストール状況確認
 ## 🧪 テスト構成
 
 ### 単体テスト（11個）
+
 - 座標境界検証
 - URL構築テスト
 - 引数解析テスト
@@ -95,6 +106,7 @@ make check-install # インストール状況確認
 - 結果フィルタリングテスト
 
 ### E2Eテスト（11個）
+
 - CLI統合テスト
 - ヘルプ表示テスト
 - インタラクティブモードテスト
@@ -102,6 +114,7 @@ make check-install # インストール状況確認
 - URL生成テスト
 
 ### テスト実行環境
+
 - **フレームワーク**: Jest
 - **カバレッジ**: 設定済み (`coverage/` ディレクトリ)
 - **CI**: GitHub Actions（キャッシュ最適化済み）
@@ -109,6 +122,7 @@ make check-install # インストール状況確認
 ## 📦 インストール方法
 
 ### GitHub直接インストール
+
 ```bash
 # 最新版
 npm install -g https://github.com/tKwbr999/msearch.git
@@ -121,6 +135,7 @@ npm install -g https://github.com/tKwbr999/msearch.git#latest
 ```
 
 ### ローカル開発
+
 ```bash
 git clone https://github.com/tKwbr999/msearch.git
 cd msearch
@@ -131,11 +146,13 @@ make install-clean  # ローカルから直接インストール
 ## 🎯 重要な実装詳細
 
 ### 検索機能
+
 - **関数**: `searchPlacesInTerminal(keyword, bounds)`
 - **スクレイピング**: `scrapeGoogleMapsResults(searchUrl)`
 - **URL生成**: `buildMapsUrl(keyword)`
 
 ### インタラクティブモード
+
 - **readline使用**: 対話式入力
 - **数字選択**: 1-12でカテゴリ選択
 - **終了**: `exit`, `quit`, 空文字で終了
@@ -143,17 +160,20 @@ make install-clean  # ローカルから直接インストール
 - **SIGINT対応**: Ctrl+C での適切な終了処理
 
 ### データフィルタリング
+
 除外キーワード: 営業、時間、フィルタ、保存、共有、地図、ログイン、データ、プライバシー、レイヤ、ウェブサイトにアクセス、km
 
 ## 🚨 既知の問題と解決済み事項
 
 ### 解決済み
+
 - ✅ CI npm install ハング → Playwright skip & キャッシュ最適化
 - ✅ readline エラーループ → 適切なクリーンアップ実装
 - ✅ TypeScript配布問題 → pure JavaScript移行
 - ✅ インタラクティブモード終了問題 → SIGINT & process.exit実装
 
 ### 今後の予定機能
+
 - 🚧 検索履歴機能（`--history`）
 - 🚧 お気に入り機能（`--favorites`）
 
@@ -201,6 +221,7 @@ const POPULAR_KEYWORDS = [
 ## 🔄 CI/CD最適化
 
 ### GitHub Actions設定
+
 ```yaml
 # キャッシュ設定
 - name: Cache node_modules
