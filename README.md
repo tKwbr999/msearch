@@ -1,4 +1,46 @@
-# msearch - 宮古島 Google Maps 検索ツール
+# msearch 🏝️🗺️🔍
+
+<!-- GitHub/リポジトリ -->
+
+[![Stars](https://img.shields.io/github/stars/tKwbr999/msearch?style=social)](https://github.com/tKwbr999/msearch/stargazers)
+[![Forks](https://img.shields.io/github/forks/tKwbr999/msearch?style=social)](https://github.com/tKwbr999/msearch/network/members)
+[![Watchers](https://img.shields.io/github/watchers/tKwbr999/msearch?style=social)](https://github.com/tKwbr999/msearch/watchers)
+[![Issues](https://img.shields.io/github/issues/tKwbr999/msearch)](https://github.com/tKwbr999/msearch/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/tKwbr999/msearch)](https://github.com/tKwbr999/msearch/pulls)
+[![Contributors](https://img.shields.io/github/contributors/tKwbr999/msearch)](https://github.com/tKwbr999/msearch/graphs/contributors)
+[![Last Commit](https://img.shields.io/github/last-commit/tKwbr999/msearch)](https://github.com/tKwbr999/msearch/commits/main)
+[![Repo Size](https://img.shields.io/github/repo-size/tKwbr999/msearch)](https://github.com/tKwbr999/msearch)
+[![Code Lines](https://img.shields.io/tokei/lines/github/tKwbr999/msearch)](https://github.com/tKwbr999/msearch)
+[![License](https://img.shields.io/github/license/tKwbr999/msearch)](LICENSE)
+
+<!-- CI/CD・品質 -->
+
+[![CI](https://github.com/tKwbr999/msearch/actions/workflows/ci-e2e-docker.yml/badge.svg)](https://github.com/tKwbr999/msearch/actions/workflows/ci-e2e-docker.yml)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/tKwbr999/msearch/pulls)
+
+<!-- 技術スタック -->
+
+![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-16%2B-339933?logo=node.js&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-45ba63?logo=playwright&logoColor=white)
+![Jest](https://img.shields.io/badge/Jest-C21325?logo=jest&logoColor=white)
+![Prettier](https://img.shields.io/badge/Prettier-F7B93E?logo=prettier&logoColor=white)
+![ESLint](https://img.shields.io/badge/ESLint-4B32C3?logo=eslint&logoColor=white)
+
+<!-- プラットフォーム -->
+
+![macOS](https://img.shields.io/badge/macOS-black?logo=apple)
+![Linux](https://img.shields.io/badge/Linux-black?logo=linux)
+![Windows](https://img.shields.io/badge/Windows-black?logo=windows)
+
+<!-- X(Twitter) -->
+
+[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/tkwbr999?label=Follow%20%40tkwbr999&style=social&logo=twitter)](https://x.com/tkwbr999)
+
+> 🏝️ **宮古諸島特化** Google Maps CLI検索ツール
+> 🗾 **地理境界限定**・🇯🇵 **日本語対応**・⚡ **超高速**・🧪 **テスト完備**・🤖 **自動CI/CD** #宮古島 #GoogleMaps #CLI #TypeScript #Playwright #Jest #ESLint #Prettier #自動化 #日本語対応 #高速 #インタラクティブ #旅行 #地図 #検索 #オープンソース #MIT
+
+---
 
 🏝️ 宮古諸島エリアに特化した Google Maps 検索コマンドラインツール
 
@@ -196,4 +238,4 @@ MIT License
 
 ## 作者
 
-Created for Miyako Islands community 🏝️
+[@tkwbr999 on X](https://x.com/tkwbr999)
