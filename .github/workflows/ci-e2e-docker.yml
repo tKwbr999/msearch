@@ -6,7 +6,7 @@
 # - 手動実行 (workflow_dispatch)
 #
 # 実行フロー:
-# 1. check: フォーマット・リントチェック
+# 1. check: フォーマット・リントチェック (最小依存関係)
 # 2. unit-tests: 単体テスト (check完了後)
 # 3. e2e-tests: E2Eテスト (Playwright Docker環境)
 # 4. merge-to-main: mainへのPRの場合のみ自動マージ
@@ -35,13 +35,31 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
 
-      - name: Install dependencies
-        run: make install
+      - name: Cache dependencies for lint/format
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules/.cache
+          key: lint-format-deps-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            lint-format-deps-${{ runner.os }}-
 
-      - name: Check formatting and linting
-        run: make check
+      - name: Install minimal dependencies for formatting and linting
+        run: |
+          export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+          export PUPPETEER_SKIP_DOWNLOAD=1
+          npm install prettier eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint-config-prettier eslint-plugin-prettier typescript@~5.5.0 --no-save --silent
+        timeout-minutes: 2
+
+      - name: Check formatting
+        run: npx prettier --check "**/*.{ts,json,md}" --ignore-path .prettierignore
+        timeout-minutes: 1
+
+      - name: Run linting
+        run: npx eslint . --ext .ts --ignore-path .eslintignore
+        timeout-minutes: 1
 
   unit-tests:
     runs-on: ubuntu-latest

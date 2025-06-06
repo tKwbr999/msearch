@@ -1,7 +1,7 @@
 # Makefile for msearch project
 # 宮古島Google Maps検索ツール開発用コマンド
 
-.PHONY: help install test lint fmt clean check dev
+.PHONY: help install test lint fmt clean check dev check-ci
 
 # デフォルトターゲット
 help: ## このヘルプを表示
@@ -62,6 +62,17 @@ dev: ## 開発モードで実行
 # チェック系
 check: fmt-check lint ## フォーマットとリントをチェック
 	@echo "✅ Format and lint checks completed"
+
+check-ci: ## CI用の最小依存関係でフォーマット・リントチェック
+	@echo "🤖 Running CI checks with minimal dependencies..."
+	@export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 && \
+	export PUPPETEER_SKIP_DOWNLOAD=1 && \
+	npm install prettier eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint-config-prettier eslint-plugin-prettier typescript@~5.5.0 --no-save --silent && \
+	echo "🔍 Checking code formatting..." && \
+	npx prettier --check "**/*.{ts,json,md}" --ignore-path .prettierignore && \
+	echo "🔍 Linting code..." && \
+	npx eslint . --ext .ts --ignore-path .eslintignore && \
+	echo "✅ CI checks completed"
 
 # クリーンアップ
 clean: ## ビルド成果物とnode_modulesを削除
