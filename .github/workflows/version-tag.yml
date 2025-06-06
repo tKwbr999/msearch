@@ -30,7 +30,8 @@ jobs:
       - name: Check if image exists
         id: check-image
         run: |
-          if docker pull ghcr.io/${{ github.repository_owner }}/msearch-e2e:latest 2>/dev/null; then
+          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          if docker pull ghcr.io/${REPO_OWNER}/msearch-e2e:latest 2>/dev/null; then
             echo "exists=true" >> $GITHUB_OUTPUT
             echo "🐳 Docker image already exists"
           else
@@ -42,6 +43,13 @@ jobs:
         if: steps.check-image.outputs.exists == 'false'
         uses: docker/setup-buildx-action@v3
 
+      - name: Set repository owner lowercase
+        if: steps.check-image.outputs.exists == 'false'
+        id: repo-owner
+        run: |
+          REPO_OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "lowercase=${REPO_OWNER_LOWER}" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         if: steps.check-image.outputs.exists == 'false'
         uses: docker/build-push-action@v5
@@ -49,7 +57,7 @@ jobs:
           context: .
           file: ./Dockerfile.e2e
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/msearch-e2e:latest
+          tags: ghcr.io/${{ steps.repo-owner.outputs.lowercase }}/msearch-e2e:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
@@ -123,17 +131,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set repository owner lowercase
+        id: repo-owner
+        run: |
+          REPO_OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "lowercase=${REPO_OWNER_LOWER}" >> $GITHUB_OUTPUT
+
       - name: Run ${{ matrix.test-type }} tests
         run: |
           # Dockerイメージが利用可能な場合は使用
-          if [ "${{ needs.build-docker-image.outputs.image-exists }}" == "true" ] || docker pull ghcr.io/${{ github.repository_owner }}/msearch-e2e:latest 2>/dev/null; then
+          if [ "${{ needs.build-docker-image.outputs.image-exists }}" == "true" ] || docker pull ghcr.io/${{ steps.repo-owner.outputs.lowercase }}/msearch-e2e:latest 2>/dev/null; then
             echo "🐳 Running ${{ matrix.test-type }} tests in Docker"
             docker run --rm \
               -v ${{ github.workspace }}:/app:ro \
               -w /app \
               -e CI=true \
               -e NODE_ENV=test \
-              ghcr.io/${{ github.repository_owner }}/msearch-e2e:latest \
+              ghcr.io/${{ steps.repo-owner.outputs.lowercase }}/msearch-e2e:latest \
               test:${{ matrix.test-type }}
           else
             echo "📦 Fallback to npm for ${{ matrix.test-type }} tests"
