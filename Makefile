@@ -12,7 +12,6 @@ help: ## このヘルプを表示
 install: ## 依存関係をインストール
 	@echo "📦 Installing dependencies..."
 	npm ci --no-audit --no-fund
-	npm run build
 
 # フォーマット
 fmt: ## コードをフォーマット
