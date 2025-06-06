@@ -112,13 +112,25 @@ jobs:
 
       - name: Update package.json version
         run: |
-          # package.jsonのバージョンを更新
-          npm version "${{ steps.generate_version.outputs.new_version_no_v }}" --no-git-tag-version
+          # 現在のバージョンを取得
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          NEW_VERSION="${{ steps.generate_version.outputs.new_version_no_v }}"
+          
+          echo "Current version: $CURRENT_VERSION"
+          echo "New version: $NEW_VERSION"
+          
+          # バージョンが同じ場合はスキップ
+          if [ "$CURRENT_VERSION" = "$NEW_VERSION" ]; then
+            echo "ℹ️ Version already up to date, skipping version update"
+          else
+            # package.jsonのバージョンを更新
+            npm version "$NEW_VERSION" --no-git-tag-version
 
-          # 変更をコミット（ビルド成果物も含める）
-          git add package.json package-lock.json build/
-          git commit -m "🔖 Bump version to ${{ steps.generate_version.outputs.new_version }}"
-          git push origin main
+            # 変更をコミット（ビルド成果物も含める）
+            git add package.json package-lock.json build/
+            git commit -m "🔖 Bump version to ${{ steps.generate_version.outputs.new_version }}"
+            git push origin main
+          fi
 
       - name: Create and push tag
         run: |
