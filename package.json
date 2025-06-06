@@ -1,6 +1,6 @@
 {
   "name": "msearch",
-  "version": "0.22.0",
+  "version": "0.23.0",
   "description": "宮古諸島専用Google Mapsコマンドライン検索ツール",
   "main": "miyako-maps-search.js",
   "repository": {
