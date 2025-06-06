@@ -29,7 +29,7 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}:/app:ro \
             -w /app \
-            ghcr.io/${{ github.repository }}/e2e-test:latest \
+            ghcr.io/${{ github.repository_owner | downcase }}/msearch-e2e:latest \
             test:lightweight
 
       - name: Run unit tests in Docker
@@ -37,7 +37,7 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}:/app:ro \
             -w /app \
-            ghcr.io/${{ github.repository }}/e2e-test:latest \
+            ghcr.io/${{ github.repository_owner | downcase }}/msearch-e2e:latest \
             test:unit
 
       - name: Run E2E tests in Docker (if not CI)
@@ -46,5 +46,5 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}:/app:ro \
             -w /app \
-            ghcr.io/${{ github.repository }}/e2e-test:latest \
+            ghcr.io/${{ github.repository_owner | downcase }}/msearch-e2e:latest \
             test:e2e
