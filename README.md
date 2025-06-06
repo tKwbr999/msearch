@@ -27,7 +27,9 @@
 - Node.js (v16以上)
 - npm
 
-### GitHubから直接インストール（推奨）
+### GitHubからのインストール
+
+#### 方法1: 直接インストール（推奨）
 
 ```bash
 # GitHubリポジトリから直接インストール
@@ -35,6 +37,23 @@ npm install -g https://github.com/tKwbr999/msearch.git
 
 # または
 npm install -g git+https://github.com/tKwbr999/msearch.git
+
+# 動作確認
+msearch --help
+```
+
+#### 方法2: リポジトリをクローンしてからインストール
+
+```bash
+# リポジトリをクローン
+git clone https://github.com/tKwbr999/msearch.git
+cd msearch
+
+# グローバルインストール
+npm install -g .
+
+# 動作確認
+msearch --help
 ```
 
 インストール後、どこからでも `msearch` コマンドが使用できます。
@@ -89,12 +108,15 @@ npm run build && node miyako-maps-search.js [options]
 #### GitHubからのアップデート
 
 ```bash
-# 最新版にアップデート
+# 最新版に直接アップデート
 npm install -g https://github.com/tKwbr999/msearch.git
 
 # または一度アンインストールしてから再インストール
 npm uninstall -g msearch
 npm install -g https://github.com/tKwbr999/msearch.git
+
+# 動作確認
+msearch --help
 ```
 
 #### ローカルソースのアップデート
@@ -311,7 +333,31 @@ msearch/
 ### よくある問題
 
 **Q: `msearch: command not found`**
-A: グローバルインストールが正しく行われていません。再インストールを試してください。
+A: グローバルインストールが正しく行われていません。以下の手順で再インストールしてください：
+
+```bash
+# 既存のインストールを削除
+npm uninstall -g msearch
+
+# 再インストール
+npm install -g https://github.com/tKwbr999/msearch.git
+```
+
+**Q: インストール後もコマンドが見つからない**
+A: npm のグローバルパスが環境変数に設定されているか確認してください：
+
+```bash
+# npm グローバルパスを確認
+npm config get prefix
+
+# パスが通っているか確認（例: /Users/username/.npm-global/bin）
+echo $PATH
+
+# パスが含まれていない場合は、シェルの設定ファイルに追加
+# bashの場合: ~/.bashrc または ~/.bash_profile
+# zshの場合: ~/.zshrc
+export PATH="$(npm config get prefix)/bin:$PATH"
+```
 
 **Q: ターミナル検索でエラーが発生する**
 A: ネットワーク接続を確認し、Google Mapsにアクセスできることを確認してください。
