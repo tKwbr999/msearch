@@ -276,32 +276,19 @@ async function searchPlacesInTerminal(
       return;
     }
 
-    console.log(`${results.length}件の結果が見つかりました:`);
+    // 重複URLの除去
+    const uniqueResults = results.filter((place, index, arr) => {
+      return arr.findIndex(p => p.mapsUrl === place.mapsUrl) === index;
+    });
+
+    console.log(`${uniqueResults.length}件の結果が見つかりました:`);
     console.log('');
 
-    results.forEach((place, index) => {
+    uniqueResults.forEach((place, index) => {
       console.log(`${index + 1}. 【店名】 ${place.name}`);
-
-      if (place.rating) {
-        console.log(`   【レビュー】 ⭐ ${place.rating}/5.0`);
-      }
-
-      if (place.address) {
-        console.log(`   【住所】 📍 ${place.address}`);
-      }
-
-      if (place.phone) {
-        console.log(`   【電話番号】 📞 ${place.phone}`);
-      }
-
-      if (place.website) {
-        console.log(`   【サイト】 🌐 ${place.website}`);
-      }
-
       if (place.mapsUrl) {
         console.log(`   【Maps詳細】 ${place.mapsUrl}`);
       }
-
       console.log('');
     });
 
@@ -310,7 +297,7 @@ async function searchPlacesInTerminal(
     console.log(`   • macOS: Cmd+クリック`);
     console.log(`   • Windows/Linux: Ctrl+クリック`);
     console.log(`   • または、URLを選択してコピー&ペースト`);
-    console.log(`📊 最大100件まで表示 (現在: ${results.length}件)`);
+    console.log(`📊 最大100件まで表示 (現在: ${uniqueResults.length}件)`);
   } catch (error) {
     console.error('❌ 検索中にエラーが発生しました:', error);
     console.log('💡 ネットワーク接続を確認して再試行してください。');
