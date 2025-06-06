@@ -338,28 +338,26 @@ jobs:
           # bin/ディレクトリを作成（存在しない場合）
           if [ ! -d "bin" ]; then
             mkdir -p bin
-            cat > bin/msearch << "EOF"
-#!/usr/bin/env node
-
-// msearch CLI entry point
-const path = require('path');
-const fs = require('fs');
-
-// Get the directory where this script is located
-const binDir = __dirname;
-const packageDir = path.dirname(binDir);
-const buildScript = path.join(packageDir, 'lib', 'miyako-maps-search.js');
-
-// Check if build script exists
-if (!fs.existsSync(buildScript)) {
-  console.error('Error: msearch build file not found at', buildScript);
-  console.error('Please reinstall msearch: npm install -g msearch');
-  process.exit(1);
-}
-
-// Execute the main script
-require(buildScript);
-EOF
+            echo '#!/usr/bin/env node' > bin/msearch
+            echo '' >> bin/msearch
+            echo '// msearch CLI entry point' >> bin/msearch
+            echo 'const path = require("path");' >> bin/msearch
+            echo 'const fs = require("fs");' >> bin/msearch
+            echo '' >> bin/msearch
+            echo '// Get the directory where this script is located' >> bin/msearch
+            echo 'const binDir = __dirname;' >> bin/msearch
+            echo 'const packageDir = path.dirname(binDir);' >> bin/msearch
+            echo 'const buildScript = path.join(packageDir, "lib", "miyako-maps-search.js");' >> bin/msearch
+            echo '' >> bin/msearch
+            echo '// Check if build script exists' >> bin/msearch
+            echo 'if (!fs.existsSync(buildScript)) {' >> bin/msearch
+            echo '  console.error("Error: msearch build file not found at", buildScript);' >> bin/msearch
+            echo '  console.error("Please reinstall msearch: npm install -g msearch");' >> bin/msearch
+            echo '  process.exit(1);' >> bin/msearch
+            echo '}' >> bin/msearch
+            echo '' >> bin/msearch
+            echo '// Execute the main script' >> bin/msearch
+            echo 'require(buildScript);' >> bin/msearch
             chmod +x bin/msearch
             echo "📁 Created bin/msearch entry point"
           fi

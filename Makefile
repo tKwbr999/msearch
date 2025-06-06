@@ -81,9 +81,21 @@ dev: ## 開発モードで実行
 	@echo "🚀 Running in development mode..."
 	npm run dev
 
+# YAML構文チェック
+yaml-check: ## YAML構文をチェック
+	@echo "📝 Checking YAML syntax..."
+	@if command -v yamllint >/dev/null 2>&1; then \
+		yamllint .github/workflows/; \
+	elif command -v python3 >/dev/null 2>&1; then \
+		python3 -c "import sys; exec('try:\\n import yaml\\nexcept ImportError:\\n print(\"Installing PyYAML...\"); import subprocess; subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", \"PyYAML\"]); import yaml\\nfor f in sys.argv[1:]:\\n try:\\n  with open(f) as file: yaml.safe_load(file); print(f\"✅ {f} is valid\")\\n except Exception as e: print(f\"❌ {f}: {e}\"); sys.exit(1)')" .github/workflows/*.yml; \
+	else \
+		echo "⚠️  yamllint or python3 not found. Skipping YAML validation."; \
+	fi
+	@echo "✅ YAML syntax check completed"
+
 # チェック系
-check: fmt-check lint ## フォーマットとリントをチェック
-	@echo "✅ Format and lint checks completed"
+check: fmt-check lint yaml-check ## フォーマットとリントとYAMLをチェック
+	@echo "✅ Format, lint, and YAML checks completed"
 
 check-ci: ## CI用の最小依存関係でフォーマット・リントチェック
 	@echo "🤖 Running CI checks with minimal dependencies..."
