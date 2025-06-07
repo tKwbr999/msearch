@@ -31,7 +31,7 @@ function parseArgs() {
     if (argList.includes('-l')) {
         args.list = true;
     }
-    // Find keyword (non-flag arguments, excluding -l)
+    // Find keyword (non-flag arguments, excluding -l and --help)
     const nonFlagArgs = argList.filter((arg) => {
         if (arg.startsWith('--'))
             return false;
