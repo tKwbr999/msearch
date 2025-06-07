@@ -72,7 +72,7 @@ async function scrapeGoogleMapsResults(searchUrl) {
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
         });
     }
-    catch (launchError) {
+    catch {
         console.log('❌ ブラウザの起動に失敗しました。シンプルな検索結果を表示します。');
         // Fallback: return simple search suggestion
         const keyword = decodeURIComponent(searchUrl.split('search/')[1]?.split('/@')[0] || 'coffee');
