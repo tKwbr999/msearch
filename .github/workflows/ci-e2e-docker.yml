@@ -105,7 +105,7 @@ jobs:
           success=false
           for i in {1..3}; do
             echo "🔄 Attempt $i/3"
-            if npm install prettier@3.2.5 eslint@8.56.0 @typescript-eslint/eslint-plugin@7.1.0 @typescript-eslint/parser@7.1.0 eslint-config-prettier@9.1.0 eslint-plugin-prettier@5.1.3 typescript@5.5.4 --no-save --no-optional --prefer-offline; then
+            if npm install prettier@3.2.5 eslint@9.28.0 @typescript-eslint/eslint-plugin@8.33.1 @typescript-eslint/parser@8.33.1 eslint-config-prettier@10.1.5 eslint-plugin-prettier@5.1.3 typescript@5.5.4 --no-save --no-optional --prefer-offline; then
               echo "✅ Installation successful on attempt $i"
               success=true
               break
@@ -123,10 +123,10 @@ jobs:
           if [ "$success" = false ]; then
             echo "🚨 npm install failed, trying individual package installation..."
             npm install prettier@3.2.5 --no-save --no-optional
-            npm install eslint@8.56.0 --no-save --no-optional
-            npm install @typescript-eslint/eslint-plugin@7.1.0 --no-save --no-optional
-            npm install @typescript-eslint/parser@7.1.0 --no-save --no-optional
-            npm install eslint-config-prettier@9.1.0 --no-save --no-optional
+            npm install eslint@9.28.0 --no-save --no-optional
+            npm install @typescript-eslint/eslint-plugin@8.33.1 --no-save --no-optional
+            npm install @typescript-eslint/parser@8.33.1 --no-save --no-optional
+            npm install eslint-config-prettier@10.1.5 --no-save --no-optional
             npm install eslint-plugin-prettier@5.1.3 --no-save --no-optional
             npm install typescript@5.5.4 --no-save --no-optional
           fi
