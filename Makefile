@@ -1,7 +1,7 @@
 # Makefile for msearch project
 # 宮古島Google Maps検索ツール開発用コマンド
 
-.PHONY: help install test lint fmt clean check dev check-ci test-e2e-ci test-e2e-ci-docker test-unit-ci
+.PHONY: help install test lint fmt clean check dev check-ci test-e2e-ci test-e2e-ci-docker test-unit-ci uninstall reinstall
 
 # デフォルトターゲット
 help: ## このヘルプを表示
@@ -112,6 +112,16 @@ check-ci: ## CI用の最小依存関係でフォーマット・リントチェ�
 clean: ## ビルド成果物とnode_modulesを削除
 	@echo "🧹 Cleaning up..."
 	rm -rf build/ node_modules/ coverage/ *.tgz
+
+# グローバルインストール管理
+uninstall: ## グローバルパッケージをアンインストール
+	@echo "🗑️  Uninstalling msearch globally..."
+	npm uninstall -g msearch
+
+reinstall: uninstall ## アンインストール後に再インストール
+	@echo "🔄 Reinstalling msearch globally..."
+	npm install -g .
+	@echo "✅ Reinstall completed"
 
 # 情報表示
 info: ## プロジェクト情報を表示
