@@ -166,7 +166,8 @@ Examples:
 
 ## 技術詳細
 
-- **言語**: JavaScript (Node.js)
+- **言語**: TypeScript + JavaScript (Node.js)
+- **アーキテクチャ**: bin/ + lib/ 標準npm構造
 - **Web スクレイピング**: Playwright
 - **テストフレームワーク**: Jest
 - **対応プラットフォーム**: macOS, Windows, Linux
@@ -184,13 +185,22 @@ cd msearch
 # 依存関係をインストール
 npm install
 
+# TypeScriptをビルド
+npm run build
+
 # 開発用実行
-node miyako-maps-search.js
+npm run dev
+# または
+node lib/miyako-maps-search.js
 ```
 
 ### 開発コマンド
 
 ```bash
+# ビルド
+npm run build
+make build
+
 # リンティング
 npm run lint
 make lint
@@ -213,7 +223,13 @@ make test-e2e
 
 # カバレッジ付きテスト
 npm run test:coverage
-make test-coverage
+
+# ローカルテストインストール
+make install-clean
+make reinstall
+
+# インストール状況確認
+make check-install
 
 # 全チェック（lint + format + test）
 make check-all
@@ -231,24 +247,39 @@ make check-all
 2段階のCI/CDパイプライン：
 
 1. **develop → main**: テスト・リント・フォーマットチェック後、自動マージ
-2. **main → release**: `miyako-maps-search.js` 変更時のみバージョン自動アップ、タグ作成、GitHub Release
+2. **main → release**: `lib/miyako-maps-search.js` 変更時のみバージョン自動アップ、タグ作成、GitHub Release
 
 **最適化されたリリース条件**:
 
-- コアファイル (`miyako-maps-search.js`) 変更時のみリリース実行
+- コアファイル (`lib/miyako-maps-search.js`) 変更時のみリリース実行
+- パッケージ構成ファイル変更時のスマート処理
 - 不要なリリースを防止し、効率的なCI/CD運用を実現
+
+**CI最適化機能**:
+
+- `package.json`, `package-lock.json`, `*.ts` 変更のみ時はテストスキップ
+- 自動ビルドで `lib/` および `bin/` ディレクトリ生成
+- npm installエラー自動修復機能
 
 ### プロジェクト構造
 
 ```
 msearch/
-├── miyako-maps-search.js    # メイン実行ファイル（本番用）
 ├── miyako-maps-search.ts    # TypeScriptソース（開発用）
-├── build/                   # ビルド出力ディレクトリ
+├── miyako-maps-search.js    # 下位互換用（削除予定）
+├── bin/                     # npm実行可能ファイル
+│   └── msearch             # メインエントリーポイント
+├── lib/                     # TypeScriptビルド出力
+│   └── miyako-maps-search.js # コンパイル済みJavaScript
 ├── tests/                   # テストディレクトリ
 │   ├── unit/               # 単体テスト (11個)
 │   └── e2e/                # E2Eテスト (11個)
-└── .github/workflows/      # CI/CDワークフロー
+├── .github/workflows/      # CI/CDワークフロー
+│   ├── ci-e2e-docker.yml   # 開発→本番自動マージ
+│   └── release.yml         # 本番→リリース自動化
+├── package.json            # npm設定（bin: bin/msearch, main: lib/...）
+├── tsconfig.json           # TypeScript設定（outDir: lib）
+└── Makefile               # 開発用コマンド集
 ```
 
 ## ライセンス

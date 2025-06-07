@@ -331,42 +331,15 @@ jobs:
             git commit -m "Auto-merge from develop after successful tests (resolved conflicts)"
           fi
           
-          # TypeScriptをビルドしてlib/ディレクトリを更新
+          # TypeScriptをビルドしてJavaScriptを更新
           npm install typescript@5.5.4 --no-save --no-optional
           npm run build
           
-          # bin/ディレクトリを作成（存在しない場合）
-          if [ ! -d "bin" ]; then
-            mkdir -p bin
-            echo '#!/usr/bin/env node' > bin/msearch
-            echo '' >> bin/msearch
-            echo '// msearch CLI entry point' >> bin/msearch
-            echo 'const path = require("path");' >> bin/msearch
-            echo 'const fs = require("fs");' >> bin/msearch
-            echo '' >> bin/msearch
-            echo '// Get the directory where this script is located' >> bin/msearch
-            echo 'const binDir = __dirname;' >> bin/msearch
-            echo 'const packageDir = path.dirname(binDir);' >> bin/msearch
-            echo 'const buildScript = path.join(packageDir, "lib", "miyako-maps-search.js");' >> bin/msearch
-            echo '' >> bin/msearch
-            echo '// Check if build script exists' >> bin/msearch
-            echo 'if (!fs.existsSync(buildScript)) {' >> bin/msearch
-            echo '  console.error("Error: msearch build file not found at", buildScript);' >> bin/msearch
-            echo '  console.error("Please reinstall msearch: npm install -g msearch");' >> bin/msearch
-            echo '  process.exit(1);' >> bin/msearch
-            echo '}' >> bin/msearch
-            echo '' >> bin/msearch
-            echo '// Execute the main script' >> bin/msearch
-            echo 'require(buildScript);' >> bin/msearch
-            chmod +x bin/msearch
-            echo "📁 Created bin/msearch entry point"
-          fi
-          
-          # ビルド成果物をコミット
-          if ! git diff --quiet lib/ bin/ 2>/dev/null; then
+          # ビルド成果物をコミット（シンプル構造）
+          if ! git diff --quiet miyako-maps-search.js 2>/dev/null; then
             echo "📦 Build output changed, committing..."
-            git add lib/ bin/
-            git commit -m "🔨 Update lib and bin output from develop merge"
+            git add miyako-maps-search.js
+            git commit -m "🔨 Update compiled JavaScript from develop merge"
           else
             echo "ℹ️ No build changes detected"
           fi
