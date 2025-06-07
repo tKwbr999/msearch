@@ -1,7 +1,7 @@
 const { execSync } = require('child_process');
 
 // テスト用のモジュール読み込み
-const originalModule = require('../../miyako-maps-search.js');
+// const originalModule = require('../../miyako-maps-search.js');
 
 // モックの設定
 jest.mock('child_process');
@@ -60,7 +60,7 @@ describe('🧪 Core Functions Unit Tests', () => {
 
   describe('URL Building', () => {
     test('should build valid Google Maps URLs', () => {
-      const keyword = 'レストラン';
+      // const keyword = 'レストラン';
       const expectedUrlPattern = /^https:\/\/www\.google\.com\/maps\/search\/\?/;
       
       // Google Maps URLの基本パターンをテスト
