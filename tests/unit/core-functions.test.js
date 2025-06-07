@@ -60,7 +60,7 @@ describe('🧪 Core Functions Unit Tests', () => {
 
   describe('URL Building', () => {
     test('should build valid Google Maps URLs', () => {
-      const keyword = 'レストラン';
+      // const keyword = 'レストラン';
       const expectedUrlPattern = /^https:\/\/www\.google\.com\/maps\/search\/\?/;
       
       // Google Maps URLの基本パターンをテスト
