@@ -1,4 +1,4 @@
-const { execSync, spawn } = require('child_process');
+const { execSync } = require('child_process');
 const path = require('path');
 
 // テスト用のCLIパス
@@ -80,7 +80,7 @@ describe('🚀 CLI Integration E2E Tests', () => {
   describe('Error Handling', () => {
     test('should show error message when -l is used without keyword', () => {
       try {
-        const output = execSync(`node ${CLI_PATH} -l`, { 
+        execSync(`node ${CLI_PATH} -l`, { 
           encoding: 'utf8',
           timeout: 3000
         });

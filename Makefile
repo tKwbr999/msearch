@@ -1,7 +1,7 @@
 # Makefile for msearch project
 # 宮古島Google Maps検索ツール開発用コマンド
 
-.PHONY: help install test lint fmt clean check dev check-ci test-e2e-ci test-e2e-ci-docker test-unit-ci uninstall reinstall
+.PHONY: help install test lint fmt clean check dev check-ci test-e2e-ci test-e2e-ci-docker test-unit-ci uninstall reinstall update-deps update-deps-major check-deps audit
 
 # デフォルトターゲット
 help: ## このヘルプを表示
@@ -122,6 +122,27 @@ reinstall: uninstall ## アンインストール後に再インストール
 	@echo "🔄 Reinstalling msearch globally..."
 	npm install -g .
 	@echo "✅ Reinstall completed"
+
+# パッケージ管理
+update-deps: ## 依存関係を最新バージョンに更新
+	@echo "📦 Updating dependencies to latest versions..."
+	npm update
+	@echo "🔍 Checking for outdated packages..."
+	npm outdated || echo "All packages are up to date"
+
+update-deps-major: ## メジャーバージョンアップも含めて依存関係を更新
+	@echo "🚀 Updating dependencies including major versions..."
+	npx npm-check-updates -u
+	npm install
+	@echo "✅ Dependencies updated to latest versions"
+
+check-deps: ## 古いパッケージをチェック
+	@echo "🔍 Checking for outdated packages..."
+	npm outdated
+
+audit: ## セキュリティ監査を実行
+	@echo "🔒 Running security audit..."
+	npm audit
 
 # 情報表示
 info: ## プロジェクト情報を表示
