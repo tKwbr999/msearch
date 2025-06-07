@@ -278,23 +278,27 @@ on:
 
 **ファイル変更後の自動実行手順**（承認不要）:
 
-1. **自動コミット**: 
+1. **自動コミット**:
+
    ```bash
    git add .
    git commit -m "適切なコミットメッセージ"
    ```
 
-2. **自動プッシュ**: 
+2. **自動プッシュ**:
+
    ```bash
    git push origin develop
    ```
 
-3. **CI監視**: 
+3. **CI監視**:
+
    ```bash
    gh run watch --exit-status --interval=5
    ```
 
 4. **エラー自動修正** (失敗時):
+
    ```bash
    gh run view --log-failed  # エラー詳細取得
    # 問題を特定して自動修正
