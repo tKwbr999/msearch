@@ -145,7 +145,7 @@ jobs:
         timeout-minutes: 2
 
       - name: Run linting
-        run: npx eslint . --ext .ts --ignore-path .eslintignore
+        run: npx eslint .
         timeout-minutes: 2
 
   unit-tests:
