@@ -31,8 +31,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "fmt": "prettier --write \"**/*.{ts,json,md}\" --ignore-path .prettierignore",
-    "fmt:check": "prettier --check \"**/*.{ts,json,md}\" --ignore-path .prettierignore",
-    "postinstall": "chmod +x miyako-maps-search.js 2>/dev/null || true"
+    "fmt:check": "prettier --check \"**/*.{ts,json,md}\" --ignore-path .prettierignore"
   },
   "bin": {
     "msearch": "miyako-maps-search.js"
