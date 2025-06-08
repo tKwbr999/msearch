@@ -204,9 +204,11 @@ Examples:
 ## 技術詳細
 
 - **言語**: TypeScript + JavaScript (Node.js)
-- **アーキテクチャ**: bin/ + lib/ 標準npm構造
+- **アーキテクチャ**: シンプルな単一ファイル構造
 - **Web スクレイピング**: Playwright
 - **テストフレームワーク**: Jest
+- **リンター**: ESLint v9 (Flat Config)
+- **フォーマッター**: Prettier
 - **対応プラットフォーム**: macOS, Windows, Linux
 - **Node.js**: v16 以上推奨
 
@@ -228,7 +230,7 @@ npm run build
 # 開発用実行
 npm run dev
 # または
-node lib/miyako-maps-search.js
+node miyako-maps-search.js
 ```
 
 ### 開発コマンド
@@ -261,15 +263,19 @@ make test-e2e
 # カバレッジ付きテスト
 npm run test:coverage
 
+# パッケージ管理
+make update-deps          # 依存関係更新
+make check-deps          # 古いパッケージチェック
+make audit              # セキュリティ監査
+
 # ローカルテストインストール
-make install-clean
 make reinstall
 
-# インストール状況確認
-make check-install
+# YAML構文チェック
+make yaml-check
 
-# 全チェック（lint + format + test）
-make check-all
+# 全チェック（lint + format + test + yaml）
+make check
 ```
 
 ### テスト
@@ -284,18 +290,18 @@ make check-all
 2段階のCI/CDパイプライン：
 
 1. **develop → main**: テスト・リント・フォーマットチェック後、自動マージ
-2. **main → release**: `lib/miyako-maps-search.js` 変更時のみバージョン自動アップ、タグ作成、GitHub Release
+2. **main → release**: `miyako-maps-search.js` 変更時のみバージョン自動アップ、タグ作成、GitHub Release
 
 **最適化されたリリース条件**:
 
-- コアファイル (`lib/miyako-maps-search.js`) 変更時のみリリース実行
+- コアファイル (`miyako-maps-search.js`) 変更時のみリリース実行
 - パッケージ構成ファイル変更時のスマート処理
 - 不要なリリースを防止し、効率的なCI/CD運用を実現
 
 **CI最適化機能**:
 
 - `package.json`, `package-lock.json`, `*.ts` 変更のみ時はテストスキップ
-- 自動ビルドで `lib/` および `bin/` ディレクトリ生成
+- ESLint v9 Flat Config対応
 - npm installエラー自動修復機能
 
 ### プロジェクト構造
@@ -303,20 +309,19 @@ make check-all
 ```
 msearch/
 ├── miyako-maps-search.ts    # TypeScriptソース（開発用）
-├── miyako-maps-search.js    # 下位互換用（削除予定）
-├── bin/                     # npm実行可能ファイル
-│   └── msearch             # メインエントリーポイント
-├── lib/                     # TypeScriptビルド出力
-│   └── miyako-maps-search.js # コンパイル済みJavaScript
+├── miyako-maps-search.js    # コンパイル済みJavaScript（実行ファイル）
 ├── tests/                   # テストディレクトリ
 │   ├── unit/               # 単体テスト (11個)
 │   └── e2e/                # E2Eテスト (11個)
 ├── .github/workflows/      # CI/CDワークフロー
 │   ├── ci-e2e-docker.yml   # 開発→本番自動マージ
 │   └── release.yml         # 本番→リリース自動化
-├── package.json            # npm設定（bin: bin/msearch, main: lib/...）
-├── tsconfig.json           # TypeScript設定（outDir: lib）
-└── Makefile               # 開発用コマンド集
+├── eslint.config.js        # ESLint v9 設定（Flat Config）
+├── jest.config.js          # Jest設定
+├── tsconfig.json           # TypeScript設定
+├── package.json            # npm設定（bin: miyako-maps-search.js）
+├── Makefile               # 開発用コマンド集
+└── CLAUDE.md              # Claude AI用プロジェクト記憶ファイル
 ```
 
 ## ライセンス
