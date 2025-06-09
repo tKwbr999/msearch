@@ -1,13 +1,19 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * Miyakojima Maps Search CLI Tool
- * Opens Google Maps search within Miyakojima's geographic bounds
+ * Miyakojima Maps Search CLI Tool (Hybrid API Version)
+ * Uses Overpass API + Foursquare API for POI search with reviews/ratings
  */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const dotenv_1 = require("dotenv");
 const child_process_1 = require("child_process");
-const playwright_1 = require("playwright");
 const process_1 = require("process");
+const axios_1 = __importDefault(require("axios"));
+// Load environment variables from .env, .env.local, etc.
+(0, dotenv_1.config)({ path: ['.env.local', '.env'] });
 // Miyako Islands coordinate bounds (宮古諸島全域の緯度経度範囲)
 // Includes: 宮古島、下地島、伊良部島、多良間村、池間島、来間島
 const MIYAKOJIMA_BOUNDS = {
@@ -31,11 +37,14 @@ function parseArgs() {
     if (argList.includes('-l')) {
         args.list = true;
     }
-    // Find keyword (non-flag arguments, excluding -l and --help)
+    if (argList.includes('-i')) {
+        args.interactive = true;
+    }
+    // Find keyword (non-flag arguments, excluding -l, -i and --help)
     const nonFlagArgs = argList.filter((arg) => {
         if (arg.startsWith('--'))
             return false;
-        if (arg === '-l')
+        if (arg === '-l' || arg === '-i')
             return false;
         return true;
     });
@@ -64,256 +73,460 @@ function openUrl(url) {
         console.error('Failed to open browser:', error);
     }
 }
-async function scrapeGoogleMapsResults(searchUrl) {
-    let browser;
-    try {
-        browser = await playwright_1.chromium.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-        });
+// Enhanced keyword to Overpass amenity/shop mapping with fuzzy search support
+const KEYWORD_MAPPING = {
+    // レストラン・食事関連
+    レストラン: ['amenity=restaurant'],
+    食事: ['amenity=restaurant'],
+    グルメ: ['amenity=restaurant'],
+    // カフェ関連
+    カフェ: ['amenity=cafe'],
+    喫茶店: ['amenity=cafe'],
+    コーヒー: ['amenity=cafe'],
+    // コンビニ・店舗関連
+    コンビニ: ['shop=convenience'],
+    コンビニエンスストア: ['shop=convenience'],
+    // 薬局関連
+    薬局: ['amenity=pharmacy'],
+    ドラッグストア: ['amenity=pharmacy'],
+    // ガソリンスタンド関連
+    ガソリンスタンド: ['amenity=fuel'],
+    ガソリン: ['amenity=fuel'],
+    給油所: ['amenity=fuel'],
+    // ATM・銀行関連
+    ATM: ['amenity=atm'],
+    銀行: ['amenity=bank'],
+    // 病院・医療関連
+    病院: ['amenity=hospital'],
+    医療: ['amenity=hospital', 'amenity=clinic'],
+    クリニック: ['amenity=clinic'],
+    // ホテル・宿泊関連
+    ホテル: ['tourism=hotel'],
+    宿泊: ['tourism=hotel', 'tourism=guest_house'],
+    宿: ['tourism=hotel', 'tourism=guest_house'],
+    // 観光関連
+    観光スポット: ['tourism=attraction', 'tourism=museum', 'tourism=viewpoint'],
+    観光地: ['tourism=attraction', 'tourism=museum', 'tourism=viewpoint'],
+    観光: ['tourism=attraction', 'tourism=museum', 'tourism=viewpoint'],
+    名所: ['tourism=attraction', 'tourism=viewpoint'],
+    博物館: ['tourism=museum'],
+    美術館: ['tourism=museum'],
+    // ビーチ・自然関連
+    ビーチ: ['natural=beach'],
+    海岸: ['natural=beach'],
+    海: ['natural=beach'],
+    // スーパー・買い物関連
+    スーパー: ['shop=supermarket'],
+    スーパーマーケット: ['shop=supermarket'],
+    買い物: ['shop=supermarket', 'shop=mall'],
+    // 居酒屋・バー関連
+    居酒屋: ['amenity=bar', 'amenity=pub'],
+    バー: ['amenity=bar'],
+    // レンタカー・交通関連 ★追加
+    レンタカー: ['amenity=car_rental', 'shop=car_rental'],
+    レンタル: ['amenity=car_rental', 'shop=car_rental'],
+    'レンタ-カー': ['amenity=car_rental', 'shop=car_rental'],
+    車: ['amenity=car_rental', 'shop=car_rental'],
+    // 空港・交通関連
+    空港: ['aeroway=aerodrome'],
+    交通: ['amenity=bus_station', 'railway=station'],
+    タクシー: ['amenity=taxi'],
+    バス: ['amenity=bus_station'],
+    // English mappings
+    restaurant: ['amenity=restaurant'],
+    cafe: ['amenity=cafe'],
+    convenience: ['shop=convenience'],
+    pharmacy: ['amenity=pharmacy'],
+    fuel: ['amenity=fuel'],
+    atm: ['amenity=atm'],
+    hospital: ['amenity=hospital'],
+    hotel: ['tourism=hotel'],
+    attraction: ['tourism=attraction'],
+    beach: ['natural=beach'],
+    supermarket: ['shop=supermarket'],
+    bar: ['amenity=bar'],
+    'car_rental': ['amenity=car_rental', 'shop=car_rental'],
+    rental: ['amenity=car_rental', 'shop=car_rental'],
+};
+// Fuzzy search function for similar keywords
+function findSimilarKeywords(keyword) {
+    const normalizedKeyword = keyword.toLowerCase().trim();
+    const exactMatch = KEYWORD_MAPPING[keyword];
+    if (exactMatch)
+        return exactMatch;
+    // Try partial matches
+    const partialMatches = [];
+    for (const [key, mappings] of Object.entries(KEYWORD_MAPPING)) {
+        if (key.toLowerCase().includes(normalizedKeyword) ||
+            normalizedKeyword.includes(key.toLowerCase())) {
+            partialMatches.push(...mappings);
+        }
     }
-    catch (launchError) {
-        console.log('❌ ブラウザの起動に失敗しました。シンプルな検索結果を表示します。');
-        // Fallback: return simple search suggestion
-        const keyword = decodeURIComponent(searchUrl.split('search/')[1]?.split('/@')[0] || 'coffee');
-        return [
-            {
-                name: `「${keyword}」の検索`,
-                address: '🔍 ブラウザでの検索をお試しください',
-                mapsUrl: searchUrl,
-            },
+    if (partialMatches.length > 0) {
+        console.log(`💡 "${keyword}" の関連キーワードで検索中...`);
+        return partialMatches;
+    }
+    return [];
+}
+function buildOverpassQuery(keyword) {
+    const bounds = `(${MIYAKOJIMA_BOUNDS.south},${MIYAKOJIMA_BOUNDS.west},${MIYAKOJIMA_BOUNDS.north},${MIYAKOJIMA_BOUNDS.east})`;
+    // Try exact match first, then fuzzy search
+    let mappings = KEYWORD_MAPPING[keyword] || findSimilarKeywords(keyword);
+    // If still no matches, try broad searches with name matching
+    if (mappings.length === 0) {
+        console.log(`🔍 "${keyword}" を含む名前で検索中...`);
+        // Use safer regex patterns and escape special characters
+        const safeKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        mappings = [
+            `name~"${safeKeyword}"`,
+            `name~".*${safeKeyword}.*"`
         ];
+        // If keyword is katakana/hiragana, also try common patterns
+        if (/[\u3040-\u309F\u30A0-\u30FF]/.test(keyword)) {
+            mappings.push(`brand~"${safeKeyword}"`);
+            mappings.push(`operator~"${safeKeyword}"`);
+        }
     }
+    // Build query parts for each mapping
+    const queryParts = mappings.flatMap(mapping => [
+        `node[${mapping}]${bounds};`,
+        `way[${mapping}]${bounds};`,
+        `relation[${mapping}]${bounds};`
+    ]);
+    return `[out:json][timeout:25];
+(
+  ${queryParts.join('\n  ')}
+);
+out center;`;
+}
+async function searchOverpassApi(keyword) {
     try {
-        const page = await browser.newPage();
-        await page.setExtraHTTPHeaders({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        const query = buildOverpassQuery(keyword);
+        console.log('🔍 OpenStreetMapから基本データを検索中...');
+        const response = await axios_1.default.post('https://overpass-api.de/api/interpreter', query, {
+            headers: {
+                'Content-Type': 'text/plain',
+            },
+            timeout: 30000,
         });
-        console.log('🌐 Google Mapsにアクセス中...');
-        await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-        // 検索結果が読み込まれるまで待機
-        await page.waitForTimeout(8000);
-        // ページの内容を解析中
-        console.log('📄 ページの内容を解析中...');
-        // CSSセレクタを使用して正確に店名を取得
-        const results = await page.evaluate(() => {
-            const places = [];
-            // 店名を含むリンク要素を取得
-            const linkElements = document.querySelectorAll('#QA0Szd a[aria-label]');
-            for (let i = 0; i < Math.min(linkElements.length, 100); i++) {
-                const element = linkElements[i];
-                const ariaLabel = element.getAttribute('aria-label');
-                if (!ariaLabel)
-                    continue;
-                // 「·アクセスしたリンク」を除去
-                const cleanName = ariaLabel.replace(/·アクセスしたリンク$/, '').trim();
-                // 明らかに店名ではないものを除外
-                if (!cleanName ||
-                    cleanName.length < 4 ||
-                    cleanName.length > 80 ||
-                    cleanName.includes('営業') ||
-                    cleanName.includes('時間') ||
-                    cleanName.includes('フィルタ') ||
-                    cleanName.includes('保存') ||
-                    cleanName.includes('共有') ||
-                    cleanName.includes('地図') ||
-                    cleanName.includes('ログイン') ||
-                    cleanName.includes('データ') ||
-                    cleanName.includes('プライバシー') ||
-                    cleanName.includes('レイヤ') ||
-                    cleanName.includes('ウェブサイトにアクセス') ||
-                    cleanName.includes('のウェブサイト') ||
-                    (cleanName.startsWith('「') && cleanName.endsWith('」')) ||
-                    cleanName.match(/^[\d.]+\(/) ||
-                    cleanName.includes('km')) {
-                    continue;
-                }
-                // 重複チェック
-                if (places.some((place) => place.name === cleanName)) {
-                    continue;
-                }
-                const place = { name: cleanName };
-                // 親要素から追加情報を取得
-                const parentElement = element.closest('[data-result-index]') ||
-                    element.closest('[role="article"]') ||
-                    element.parentElement;
-                if (parentElement) {
-                    // 評価を取得
-                    const ratingElement = parentElement.querySelector('[role="img"][aria-label*="星"], [aria-label*="5つ星"]');
-                    if (ratingElement) {
-                        const ratingText = ratingElement.getAttribute('aria-label') || '';
-                        const ratingMatch = ratingText.match(/(\d+\.?\d*)/);
-                        if (ratingMatch) {
-                            place.rating = parseFloat(ratingMatch[1]);
-                        }
-                    }
-                    // 住所を取得（具体的なセレクターを使用）
-                    const addressElement = document.querySelector('#QA0Szd > div > div > div.w6VYqd > div.bJzME.tTVLSc > div > div.e07Vkf.kA9KIf > div > div > div.m6QErb.DxyBCb.kA9KIf.dS8AEf.XiKgde.ecceSd > div.m6QErb.DxyBCb.kA9KIf.dS8AEf.XiKgde.ecceSd > div:nth-child(5) > div > div.bfdHYd.Ppzolf.OFBs3e > div.lI9IFe > div.y7PRA > div > div > div.UaQhfb.fontBodyMedium > div:nth-child(4) > div:nth-child(1) > span:nth-child(2) > span:nth-child(2)');
-                    if (addressElement) {
-                        const addressText = addressElement.textContent?.trim();
-                        if (addressText &&
-                            (addressText.includes('平良') ||
-                                addressText.includes('下地') ||
-                                addressText.includes('来間') ||
-                                addressText.includes('池間') ||
-                                addressText.includes('多良間') ||
-                                addressText.includes('伊良部'))) {
-                            place.address = addressText;
-                        }
-                    }
-                }
-                places.push(place);
-            }
-            // Google Maps URLを各店舗に追加
-            for (const place of places) {
-                if (place.name) {
-                    const encodedName = encodeURIComponent(place.name + ' 宮古島');
-                    place.mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedName}&center=24.805,125.2817&zoom=15`;
-                }
-            }
-            return places;
-        });
-        return results;
-    }
-    catch (error) {
-        console.error('❌ Google Mapsからの情報取得に失敗しました:', error?.message || error);
+        const data = response.data;
+        if (data.elements && Array.isArray(data.elements)) {
+            return data.elements.filter((element) => element.tags &&
+                element.tags.name &&
+                element.lat &&
+                element.lon);
+        }
         return [];
     }
-    finally {
-        if (browser) {
-            try {
-                await browser.close();
-            }
-            catch (closeError) {
-                console.error('ブラウザクローズエラー:', closeError?.message || closeError);
-            }
-        }
+    catch (error) {
+        console.error('❌ Overpass API error:', error);
+        return [];
     }
 }
-async function searchPlacesInTerminal(keyword, _bounds) {
-    console.log(`🔍 宮古諸島で「${keyword}」を検索中...`);
-    // 実際のGoogle Maps URLを生成
-    const searchUrl = buildMapsUrl(keyword);
-    console.log(`🔗 検索URL: ${searchUrl}`);
-    console.log('');
+async function searchFoursquareApi(placeName, lat, lng) {
     try {
-        // Google Mapsから実際の検索結果を取得
-        const results = await scrapeGoogleMapsResults(searchUrl);
-        if (results.length === 0) {
-            console.log('指定されたエリアで結果が見つかりませんでした。');
-            console.log('💡 ヒント: キーワードを変更してお試しください。');
-            return;
+        // Note: In production, API key should be from environment variable
+        const apiKey = process.env.FOURSQUARE_API_KEY;
+        if (!apiKey) {
+            console.log('⚠️ Foursquare API key not found, skipping reviews');
+            return null;
         }
-        // 重複URLの除去
-        const uniqueResults = results.filter((place, index, arr) => {
-            return arr.findIndex((p) => p.mapsUrl === place.mapsUrl) === index;
+        // Debug: console.log(`🔑 Foursquare API呼び出し: "${placeName}" (${lat},${lng}) - キー: ${apiKey.slice(0,8)}...`);
+        const params = new URLSearchParams({
+            query: placeName,
+            ll: `${lat},${lng}`,
+            radius: '1000',
+            limit: '1'
         });
-        console.log(`${uniqueResults.length}件の結果が見つかりました:`);
-        console.log('');
-        uniqueResults.forEach((place, index) => {
-            console.log(`${index + 1}. 【店名】 ${place.name}`);
-            if (place.mapsUrl) {
-                console.log(`   【Maps詳細】 ${place.mapsUrl}`);
-            }
-            console.log('');
+        const response = await axios_1.default.get(`https://api.foursquare.com/v3/places/search?${params}`, {
+            headers: {
+                'Authorization': apiKey,
+                'Accept': 'application/json'
+            },
+            timeout: 5000,
         });
-        console.log(`💡 ヒント: -lフラグなしで実行するとGoogle Mapsブラウザで開きます`);
-        console.log(`🖱️  URLクリック方法:`);
-        console.log(`   • macOS: Cmd+クリック`);
-        console.log(`   • Windows/Linux: Ctrl+クリック`);
-        console.log(`   • または、URLを選択してコピー&ペースト`);
-        console.log(`📊 最大100件まで表示 (現在: ${uniqueResults.length}件)`);
+        const results = response.data.results;
+        if (results && results.length > 0) {
+            // Debug: console.log(`✅ Foursquare API成功: ${results[0].name} (評価: ${results[0].rating || 'なし'})`);
+            return results[0];
+        }
+        else {
+            // Debug: console.log(`❌ Foursquare API: "${placeName}" の結果なし`);
+            return null;
+        }
     }
     catch (error) {
-        console.error('❌ 検索中にエラーが発生しました:', error);
-        console.log('💡 ネットワーク接続を確認して再試行してください。');
+        // Debug: console.log(`❌ Foursquare API エラー: ${error.response?.status || error.message}`);
+        return null;
     }
 }
-function buildMapsUrl(keyword) {
-    const bounds = MIYAKOJIMA_BOUNDS;
-    if (keyword) {
-        // 宮古島を地理的に指定した検索クエリを作成
-        const locationQuery = `${keyword} 宮古島 沖縄`;
-        const baseUrl = 'https://www.google.com/maps/search/';
-        // 宮古諸島の境界を指定してズーム
-        const boundsParam = `${bounds.south},${bounds.west}|${bounds.north},${bounds.east}`;
-        const searchParams = new URLSearchParams({
-            api: '1',
-            query: locationQuery,
-            bounds: boundsParam,
+function buildAddress(tags) {
+    const parts = [];
+    if (tags['addr:housenumber'])
+        parts.push(tags['addr:housenumber']);
+    if (tags['addr:street'])
+        parts.push(tags['addr:street']);
+    if (tags['addr:city'])
+        parts.push(tags['addr:city']);
+    if (parts.length === 0) {
+        return '住所情報なし';
+    }
+    return parts.join(' ');
+}
+function buildMapsUrl(lat, lng, name) {
+    const encodedName = encodeURIComponent(name);
+    return `https://www.google.com/maps/search/${encodedName}/@${lat},${lng},15z`;
+}
+async function enrichWithFoursquare(overpassResults) {
+    const enrichedResults = [];
+    console.log('📊 レビュー・評価データを取得中...');
+    // Check API key once and show warning if missing
+    const hasApiKey = !!process.env.FOURSQUARE_API_KEY;
+    if (!hasApiKey) {
+        console.log('⚠️ Foursquare API key not found, skipping reviews');
+    }
+    for (const poi of overpassResults) {
+        const basePoi = {
+            name: poi.tags.name || 'Unknown',
+            address: buildAddress(poi.tags),
+            coordinates: { lat: poi.lat, lng: poi.lon },
+            phone: poi.tags.phone,
+            website: poi.tags.website,
+            opening_hours: poi.tags.opening_hours,
+            mapsUrl: buildMapsUrl(poi.lat, poi.lon, poi.tags.name || 'Unknown')
+        };
+        // Only try Foursquare API if we have an API key
+        if (hasApiKey) {
+            try {
+                const foursquareData = await searchFoursquareApi(poi.tags.name || '', poi.lat, poi.lon);
+                if (foursquareData) {
+                    basePoi.rating = foursquareData.rating;
+                    basePoi.reviews_count = foursquareData.stats?.total_tips || 0;
+                    basePoi.price_level = foursquareData.price;
+                }
+            }
+            catch {
+                // Continue with basic data if Foursquare fails
+            }
+        }
+        enrichedResults.push(basePoi);
+    }
+    return enrichedResults;
+}
+function formatPoiForDisplay(poi) {
+    let result = `🏪 ${poi.name}\n`;
+    result += `📍 ${poi.address}\n`;
+    // レーティング情報の表示（APIキーがあり、Foursquareから取得を試行した場合）
+    if (process.env.FOURSQUARE_API_KEY) {
+        if (poi.rating) {
+            const stars = '⭐'.repeat(Math.round(poi.rating));
+            result += `⭐ ${poi.rating}/5 ${stars}`;
+            if (poi.reviews_count) {
+                result += ` (${poi.reviews_count} reviews)`;
+            }
+            result += '\n';
+        }
+        else {
+            result += `⭐ レーティング情報なし\n`;
+        }
+    }
+    if (poi.price_level) {
+        const priceChars = '💰'.repeat(poi.price_level);
+        result += `💰 価格帯: ${priceChars}\n`;
+    }
+    if (poi.phone) {
+        result += `📞 ${poi.phone}\n`;
+    }
+    if (poi.website) {
+        result += `🌐 ${poi.website}\n`;
+    }
+    if (poi.opening_hours) {
+        result += `🕒 ${poi.opening_hours}\n`;
+    }
+    result += `🗺️ ${poi.mapsUrl}\n`;
+    return result;
+}
+async function searchPlacesWithHybridApi(keyword) {
+    try {
+        const overpassResults = await searchOverpassApi(keyword);
+        if (overpassResults.length === 0) {
+            console.log('❌ 該当する場所が見つかりませんでした。');
+            return [];
+        }
+        console.log(`✅ ${overpassResults.length}件の基本データを取得しました。`);
+        const enrichedResults = await enrichWithFoursquare(overpassResults);
+        return enrichedResults;
+    }
+    catch (error) {
+        console.error('検索エラー:', error);
+        return [];
+    }
+}
+function buildMapsSearchUrl(keyword) {
+    const encodedKeyword = encodeURIComponent(keyword);
+    const { lat, lng } = MIYAKOJIMA_CENTER;
+    return `https://www.google.com/maps/search/${encodedKeyword}/@${lat},${lng},12z/data=!3m1!4b1`;
+}
+// Popular keywords for interactive mode
+const POPULAR_KEYWORDS = [
+    { name: 'レストラン', emoji: '🍽️', description: '食事・グルメ' },
+    { name: 'カフェ', emoji: '☕', description: 'コーヒー・喫茶店' },
+    { name: 'コンビニ', emoji: '🏪', description: 'コンビニエンスストア' },
+    { name: '薬局', emoji: '💊', description: 'ドラッグストア・薬局' },
+    { name: 'ガソリンスタンド', emoji: '⛽', description: 'ガソリンスタンド' },
+    { name: 'ATM', emoji: '🏧', description: '銀行・ATM' },
+    { name: '病院', emoji: '🏥', description: '病院・医療施設' },
+    { name: 'ホテル', emoji: '🏨', description: 'ホテル・宿泊施設' },
+    { name: 'レンタカー', emoji: '🚗', description: 'レンタカー・車両レンタル' },
+    { name: '観光スポット', emoji: '🗾', description: '観光地・名所' },
+    { name: 'ビーチ', emoji: '🏖️', description: 'ビーチ・海岸' },
+    { name: 'スーパー', emoji: '🛒', description: 'スーパーマーケット' },
+    { name: '居酒屋', emoji: '🍻', description: '居酒屋・バー' },
+];
+async function runInteractiveMode() {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const readline = require('readline');
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+    // Handle Ctrl+C gracefully
+    process.on('SIGINT', () => {
+        console.log('\n👋 プログラムを終了します。');
+        rl.close();
+        process.exit(0);
+    });
+    console.log('\n🏝️ 宮古諸島エリア検索 - インタラクティブモード');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    const displayMenu = () => {
+        console.log('\n✨ 人気の検索カテゴリ:');
+        POPULAR_KEYWORDS.forEach((item, index) => {
+            console.log(`${String(index + 1).padStart(2, ' ')}. ${item.emoji} ${item.name} - ${item.description}`);
         });
-        return `${baseUrl}?${searchParams.toString()}`;
-    }
-    else {
-        // Show Miyakojima islands with bounds to ensure proper zoom
-        const boundsParam = `${bounds.south},${bounds.west}|${bounds.north},${bounds.east}`;
-        return `https://www.google.com/maps/@${MIYAKOJIMA_CENTER.lat},${MIYAKOJIMA_CENTER.lng},12z?bounds=${encodeURIComponent(boundsParam)}`;
-    }
+        console.log('\n💡 使い方:');
+        console.log('- 番号を入力してカテゴリを選択');
+        console.log('- または直接キーワードを入力');
+        console.log('- "exit", "quit", または空文字で終了');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    };
+    displayMenu();
+    const askQuestion = () => {
+        rl.question('\n🔍 検索したいカテゴリの番号またはキーワードを入力してください: ', async (input) => {
+            const trimmedInput = input.trim();
+            if (trimmedInput === '' || trimmedInput.toLowerCase() === 'exit' || trimmedInput.toLowerCase() === 'quit') {
+                console.log('\n👋 ありがとうございました！');
+                rl.close();
+                return;
+            }
+            let keyword = trimmedInput;
+            // Check if input is a number (category selection)
+            const num = parseInt(trimmedInput);
+            if (!isNaN(num) && num >= 1 && num <= POPULAR_KEYWORDS.length) {
+                keyword = POPULAR_KEYWORDS[num - 1].name;
+                console.log(`\n${POPULAR_KEYWORDS[num - 1].emoji} "${keyword}" を検索します...`);
+            }
+            else {
+                console.log(`\n🔍 "${keyword}" を検索します...`);
+            }
+            try {
+                const results = await searchPlacesWithHybridApi(keyword);
+                if (results.length === 0) {
+                    console.log('❌ 該当する場所が見つかりませんでした。別のキーワードをお試しください。');
+                }
+                else {
+                    console.log(`\n✅ ${results.length}件の結果が見つかりました:\n`);
+                    results.forEach((poi, index) => {
+                        console.log(`【${index + 1}】${formatPoiForDisplay(poi)}`);
+                    });
+                }
+            }
+            catch (searchError) {
+                console.error('❌ 検索中にエラーが発生しました:', searchError);
+            }
+            askQuestion();
+        });
+    };
+    askQuestion();
 }
 function showHelp() {
-    console.log('Usage: msearch [keyword] [options]');
-    console.log('');
-    console.log('Searches Google Maps within Miyako Islands (宮古諸島) geographic bounds.');
-    console.log('All searches are centered on Miyakojima main island for optimal results.');
-    console.log('Higher zoom level (14z) is used to show more detailed search results.');
-    console.log('If no keyword is provided, shows Miyako Islands area.');
-    console.log('');
-    console.log('Included islands:');
-    console.log('  • 宮古島 (Miyakojima)');
-    console.log('  • 下地島 (Shimojishima)');
-    console.log('  • 伊良部島 (Irabujima)');
-    console.log('  • 多良間村 (Tarama Village)');
-    console.log('  • 池間島 (Ikemajima)');
-    console.log('  • 来間島 (Kurimajima)');
-    console.log('');
-    console.log('Coordinate bounds:');
-    console.log(`  North: ${MIYAKOJIMA_BOUNDS.north}° (24°56'30"N - 宮古島市北端)`);
-    console.log(`  South: ${MIYAKOJIMA_BOUNDS.south}° (24°39'00"N - 多良間村南端)`);
-    console.log(`  East:  ${MIYAKOJIMA_BOUNDS.east}° (125°28'30"E - 宮古島市東端)`);
-    console.log(`  West:  ${MIYAKOJIMA_BOUNDS.west}° (124°41'00"E - 多良間村西端)`);
-    console.log('');
-    console.log('Options:');
-    console.log('  -l               Display search results in terminal instead of browser');
-    console.log('  --url-only       Print the URL only without opening browser');
-    console.log('  --help           Show this help message');
-    console.log('');
-    console.log('Examples:');
-    console.log('  msearch                         # Show Miyako Islands area');
-    console.log('  msearch レストラン                # Search restaurants in Miyako Islands');
-    console.log('  msearch レストラン -l             # List restaurants in terminal');
-    console.log('  msearch "coffee shop" -l        # List coffee shops in terminal');
-    console.log('  msearch --url-only              # Print Miyako Islands URL only');
+    console.log(`
+🏝️ msearch - 宮古諸島専用 Google Maps 検索ツール (Hybrid API版)
+
+使用方法:
+  msearch [keyword]           ブラウザでマップを開く
+  msearch [keyword] -l        ターミナルに結果を表示
+  msearch -i                  インタラクティブモード
+  msearch --url-only          URLのみ表示
+  msearch --help              このヘルプを表示
+
+例:
+  msearch レストラン          宮古島のレストランをブラウザで表示
+  msearch カフェ -l           宮古島のカフェをターミナルに一覧表示
+  msearch -i                  対話式カテゴリ選択
+
+対象エリア: 宮古島、池間島、来間島、伊良部島、下地島、多良間島、水納島
+
+🆕 新機能:
+- OpenStreetMap + Foursquare APIによる高速検索
+- レビュー・評価データの表示
+- より正確なPOI情報
+- 軽量で安定した動作
+`);
 }
 async function main() {
     const args = parseArgs();
-    // Show help if --help flag is present
-    if (process_1.argv.includes('--help')) {
+    // Show help
+    if (process_1.argv.includes('--help') || process_1.argv.includes('-h')) {
         showHelp();
-        process.exit(0);
-    }
-    // Handle -l flag for terminal display
-    if (args.list) {
-        if (!args.keyword) {
-            console.log('❌ -lフラグを使用する場合はキーワードを指定してください');
-            console.log('例: msearch レストラン -l');
-            process.exit(1);
-        }
-        await searchPlacesInTerminal(args.keyword, MIYAKOJIMA_BOUNDS);
         return;
     }
-    const mapsUrl = buildMapsUrl(args.keyword);
-    if (args.urlOnly) {
-        console.log(mapsUrl);
+    // Interactive mode
+    if (args.interactive) {
+        await runInteractiveMode();
+        return;
     }
-    else {
-        const searchDesc = args.keyword
-            ? `${args.keyword} within Miyako Islands bounds`
-            : `Miyako Islands area`;
-        console.log(`Opening Google Maps search for: ${searchDesc}`);
-        openUrl(mapsUrl);
-        console.log(`URL: ${mapsUrl}`);
+    // Validate keyword
+    if (!args.keyword) {
+        console.error('❌ 検索キーワードを指定してください。');
+        console.log('使用方法: msearch <keyword> または msearch --help でヘルプを表示');
+        process.exit(1);
+    }
+    const keyword = args.keyword;
+    try {
+        // URL only mode
+        if (args.urlOnly) {
+            const url = buildMapsSearchUrl(keyword);
+            console.log(url);
+            return;
+        }
+        // List mode - search and display results in terminal
+        if (args.list) {
+            console.log(`🔍 "${keyword}" を宮古諸島エリアで検索中...`);
+            const results = await searchPlacesWithHybridApi(keyword);
+            if (results.length === 0) {
+                console.log('❌ 該当する場所が見つかりませんでした。');
+                return;
+            }
+            console.log(`\n✅ ${results.length}件の結果が見つかりました:\n`);
+            results.forEach((poi, index) => {
+                console.log(`【${index + 1}】${formatPoiForDisplay(poi)}`);
+            });
+            return;
+        }
+        // Default mode - open in browser
+        console.log(`🔍 "${keyword}" の検索結果をブラウザで開きます...`);
+        const url = buildMapsSearchUrl(keyword);
+        openUrl(url);
+    }
+    catch (error) {
+        console.error('❌ エラーが発生しました:', error);
+        process.exit(1);
     }
 }
+// Run the main function
 if (require.main === module) {
-    main();
+    main().catch((error) => {
+        console.error('Fatal error:', error);
+        process.exit(1);
+    });
 }
