@@ -45,7 +45,7 @@ export class MSearchApp {
 
     // Environment status
     if (args.status) {
-      this.cliHandler.handleStatus();
+      await this.cliHandler.handleStatus();
       return;
     }
 

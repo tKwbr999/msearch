@@ -137,8 +137,8 @@ export class CliHandler {
   /**
    * Handle environment status check
    */
-  public handleStatus(): void {
-    this.envService.checkStatus();
+  public async handleStatus(): Promise<void> {
+    await this.envService.checkStatus();
   }
 
   /**

@@ -5,6 +5,7 @@
 
 import { POPULAR_KEYWORDS } from "../config.js";
 import { SearchService } from "../services/SearchService.js";
+import * as readline from "readline";
 
 export class InteractiveHandler {
   private searchService: SearchService;
@@ -17,9 +18,6 @@ export class InteractiveHandler {
    * Run interactive mode
    */
   public async run(): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const readline = require("readline");
-
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,

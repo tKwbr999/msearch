@@ -16,7 +16,7 @@ export class EnvService {
   /**
    * Check current environment status
    */
-  public checkStatus(): void {
+  public async checkStatus(): Promise<void> {
     console.log("🔍 環境設定状況:\n");
 
     // Check environment variable
@@ -32,18 +32,18 @@ export class EnvService {
 
     // Check .env files
     console.log("\n📁 .envファイル:");
-    this.envFiles.forEach(async (file) => {
+    for (const file of this.envFiles) {
       try {
         await fs.access(file);
         console.log(`✅ ${file}: 存在`);
       } catch {
         console.log(`❌ ${file}: 未作成`);
       }
-    });
+    }
 
     // Check shell config files
     console.log("\n🐚 シェル設定ファイル:");
-    [this.bashrcPath, this.zshrcPath].forEach(async (file) => {
+    for (const file of [this.bashrcPath, this.zshrcPath]) {
       try {
         await fs.access(file);
         const content = await fs.readFile(file, "utf8");
@@ -55,7 +55,7 @@ export class EnvService {
       } catch {
         console.log(`❌ ${file}: 未作成`);
       }
-    });
+    }
 
     console.log("\n💡 レビュー機能の状態:");
     if (apiKey) {
