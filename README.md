@@ -46,7 +46,7 @@
 
 🏝️ 宮古諸島エリアに特化したハイブリッドAPI検索コマンドラインツール
 
-**🆕 v2.0 ハイブリッドAPI版**: OpenStreetMap + Foursquare APIによる高速検索でレビュー・評価データも表示！  
+**ハイブリッドAPI統合**: OpenStreetMap + Foursquare APIによる高速検索でレビュー・評価データも表示！  
 **🏗️ モジュラー設計**: SOLID原則に基づくクリーンアーキテクチャでメンテナンス性向上！
 
 ## 📦 インストール・セットアップ方法
@@ -70,8 +70,8 @@ npm --version   # npmがインストールされていることを確認
 # 最新版をインストール
 npm install -g https://github.com/tKwbr999/msearch.git
 
-# 特定のバージョンをインストール (例: v0.7.1)
-npm install -g https://github.com/tKwbr999/msearch.git#v0.7.1
+# 特定のバージョンをインストール (例: v1.0.0)
+npm install -g https://github.com/tKwbr999/msearch.git#v1.0.0
 ```
 
 #### ローカル開発・カスタマイズ用
@@ -91,25 +91,22 @@ npm run build
 npm install -g .
 ```
 
-### 3. 環境変数設定 (オプション)
+### 3. レビュー機能セットアップ (オプション)
 
-**レビュー・評価機能を有効にするには** Foursquare API キーが必要です：
+**レビュー・評価機能**を有効にするには：
 
 ```bash
-# 1. .env.example をコピー
-cp .env.example .env
+# 対話式セットアップ（推奨）
+msearch --setup
 
-# 2. Foursquare API キーを取得
-# https://foursquare.com/developers/ から無料でAPI キーを取得
+# 設定状況確認
+msearch --status
 
-# 3. .env ファイルを編集
-echo "FOURSQUARE_API_KEY=your_actual_api_key_here" > .env
-
-# または環境変数として設定
-export FOURSQUARE_API_KEY="your_actual_api_key_here"
+# 手動設定の場合
+export FOURSQUARE_API_KEY="your_api_key_here"
 ```
 
-**📝 注意**: API キーがなくても基本検索は動作しますが、レビュー・評価データは表示されません。
+**📝 注意**: API キーがなくても基本検索は動作します。レビュー機能は完全オプションです。
 
 ### 4. インストール確認
 
@@ -117,14 +114,20 @@ export FOURSQUARE_API_KEY="your_actual_api_key_here"
 # ヘルプ表示でインストール確認
 msearch --help
 
+# バージョン確認
+msearch --version
+
 # 基本動作テスト (ブラウザが開く)
-msearch
+msearch レストラン
 
 # URL生成テスト (APIキーなしでも動作)
 msearch カフェ --url-only
 
-# ターミナル検索テスト (APIキーあり推奨)
+# ターミナル検索テスト
 msearch レストラン -l
+
+# 環境設定状況確認
+msearch --status
 ```
 
 ### 5. アンインストール
@@ -149,20 +152,23 @@ rm -f .env
 - 🧪 **テスト完備**: 51のテストで品質保証
 - 🚀 **自動CI/CD**: 開発からリリースまで自動化
 
-## ✨ 新機能 (v2.0 ハイブリッドAPI版)
+## ✨ 主要機能
 
-### 🚀 パフォーマンス大幅向上
-- ⚡ **3倍高速化**: 従来11-13秒 → 2-3秒で検索完了
+### 🚀 高速検索
+
+- ⚡ **高速レスポンス**: 2-3秒で検索完了
 - 🏗️ **ハイブリッドAPI**: OpenStreetMap + Foursquare API統合
-- 🛡️ **安定性向上**: DOM解析不要、API直接呼び出し
+- 🛡️ **安定性**: API直接呼び出しによる確実な動作
 
 ### ⭐ 充実したPOI情報
+
 - 📊 **レビュー・評価**: Foursquare APIからの★評価とレビュー数
 - 💰 **価格帯表示**: レストラン・カフェの価格レベル
 - 📞 **詳細情報**: 電話番号、営業時間、ウェブサイト
 - 📍 **正確な住所**: OpenStreetMapの構造化データ
 
 ### 🆓 完全無料運用
+
 - 💸 **追加費用なし**: Foursquare月40,000リクエスト無料枠
 - 🔧 **設定可能**: 環境変数 `FOURSQUARE_API_KEY` でレビュー機能有効化
 - 🔄 **フォールバック**: API失敗時も基本データ表示
@@ -174,11 +180,12 @@ rm -f .env
 msearch レストラン -l
 
 # レビュー付き検索（要API Key）
-export FOURSQUARE_API_KEY="your_api_key"
+export FOURSQUARE_API_KEY="your_api_key_here"
 msearch レストラン -l
 ```
 
 出力例:
+
 ```
 【1】🏪 じんく屋
 📍 沖縄県宮古島市平良下里８４−４
@@ -212,8 +219,7 @@ msearch カフェ -l
 ```bash
 # 1. API キー取得: https://foursquare.com/developers/
 # 2. 環境変数設定
-export FOURSQUARE_API_KEY="your_api_key"
-fsq3teOaSVybilqmGRFvWlQ5aW6Vd22dBiwVHAorH1qKmpE=
+export FOURSQUARE_API_KEY="your_api_key_here"
 
 # 3. レビュー付き検索
 msearch レストラン -l
@@ -306,165 +312,65 @@ Examples:
 - 多良間島
 - 水納島
 
-## 技術詳細
+## 技術スタック
 
 - **言語**: TypeScript + JavaScript (Node.js)
-- **アーキテクチャ**: ハイブリッドAPI統合アーキテクチャ
+- **アーキテクチャ**: SOLID原則準拠 + ハイブリッドAPI統合
 - **基本データAPI**: OpenStreetMap Overpass API (無料)
 - **レビューAPI**: Foursquare Places API (月40,000リクエスト無料)
-- **HTTPクライアント**: axios
-- **テストフレームワーク**: Jest
-- **リンター**: ESLint v9 (Flat Config)
-- **フォーマッター**: Prettier
 - **対応プラットフォーム**: macOS, Windows, Linux
 - **Node.js**: v16 以上推奨
 
-### API設定詳細
+### レビュー機能セットアップ
 
-#### Foursquare API セットアップ
-
-1. **無料アカウント作成**: [Foursquare Developer Console](https://foursquare.com/developers/)
-2. **新しいアプリを作成**: プロジェクト名は "msearch" など適当に
-3. **API キーをコピー**: `Authorization` ヘッダー用のキーを取得
-4. **環境変数に設定**:
+#### 対話式セットアップ（推奨）
 
 ```bash
-# 永続的な設定 (推奨)
-echo 'export FOURSQUARE_API_KEY="your_api_key_here"' >> ~/.bashrc
-source ~/.bashrc
+# 対話式でAPI キーを設定
+msearch --setup
 
-# 一時的な設定
+# 設定状況を確認
+msearch --status
+```
+
+#### 手動セットアップ
+
+1. [Foursquare Developer Console](https://foursquare.com/developers/) で無料アカウント作成
+2. アプリを作成してAPI キーを取得
+3. 環境変数に設定:
+
+```bash
+# グローバル設定
 export FOURSQUARE_API_KEY="your_api_key_here"
 
-# .env ファイル使用
-echo "FOURSQUARE_API_KEY=your_api_key_here" > .env
+# または .env.local ファイルに記述
+echo "FOURSQUARE_API_KEY=your_api_key_here" > .env.local
 ```
 
-#### 無料枠について
-- **月40,000リクエスト無料** ($200クレジット相当)
-- **1日あたり約1,300リクエスト** 使用可能
-- **通常使用**: 1日10-20回検索程度なら余裕
-- **制限到達時**: 基本検索は継続、レビューのみ非表示
+**無料枠**: 月40,000リクエスト (個人利用には十分)  
+**制限到達時**: 基本検索は継続、レビューのみ非表示
 
-## 開発
+## 開発者向け情報
 
-### ローカル開発セットアップ
+開発・カスタマイズ・コントリビューションについては **[DEVELOP.md](./DEVELOP.md)** をご参照ください。
+
+### 開発クイックスタート
 
 ```bash
-# 1. リポジトリをクローン
+# 開発環境セットアップ
 git clone https://github.com/tKwbr999/msearch.git
 cd msearch
-
-# 2. 依存関係をインストール
 npm install
-
-# 3. 環境変数設定 (オプション)
-cp .env.example .env
-# .env を編集して FOURSQUARE_API_KEY を設定
-
-# 4. TypeScriptをビルド
 npm run build
+make install-clean
 
-# 5. 開発用実行
-npm run dev          # TypeScript直接実行
-# または
-node miyako-maps-search.js  # コンパイル済みJS実行
-
-# 6. ローカルでテスト
-./miyako-maps-search.js --help
-./miyako-maps-search.js カフェ --url-only
+# 開発用コマンド
+make dev           # TypeScript watch mode
+make test          # 全テスト実行
+make check-all     # 品質チェック
 ```
 
-### 開発コマンド
-
-```bash
-# ビルド
-npm run build
-make build
-
-# リンティング
-npm run lint
-make lint
-
-# フォーマット
-npm run fmt
-make fmt
-
-# テスト実行
-npm test
-make test
-
-# 単体テスト
-npm run test:unit
-make test-unit
-
-# E2Eテスト
-npm run test:e2e
-make test-e2e
-
-# カバレッジ付きテスト
-npm run test:coverage
-
-# パッケージ管理
-make update-deps          # 依存関係更新
-make check-deps          # 古いパッケージチェック
-make audit              # セキュリティ監査
-
-# ローカルテストインストール
-make reinstall
-
-# YAML構文チェック
-make yaml-check
-
-# 全チェック（lint + format + test + yaml）
-make check
-```
-
-### テスト
-
-51個のテストで品質を保証：
-
-- **単体テスト**: 座標境界、URL構築、引数解析、API統合、結果フィルタリング
-- **E2Eテスト**: CLI統合、ヘルプ表示、インタラクティブモード、エラーハンドリング、ハイブリッドAPI検索
-
-### CI/CD
-
-2段階のCI/CDパイプライン：
-
-1. **develop → main**: テスト・リント・フォーマットチェック後、自動マージ
-2. **main → release**: `miyako-maps-search.js` 変更時のみバージョン自動アップ、タグ作成、GitHub Release
-
-**最適化されたリリース条件**:
-
-- コアファイル (`miyako-maps-search.js`) 変更時のみリリース実行
-- パッケージ構成ファイル変更時のスマート処理
-- 不要なリリースを防止し、効率的なCI/CD運用を実現
-
-**CI最適化機能**:
-
-- `package.json`, `package-lock.json`, `*.ts` 変更のみ時はテストスキップ
-- ESLint v9 Flat Config対応
-- npm installエラー自動修復機能
-
-### プロジェクト構造
-
-```
-msearch/
-├── miyako-maps-search.ts    # TypeScriptソース（開発用）
-├── miyako-maps-search.js    # コンパイル済みJavaScript（実行ファイル）
-├── tests/                   # テストディレクトリ
-│   ├── unit/               # 単体テスト (11個)
-│   └── e2e/                # E2Eテスト (11個)
-├── .github/workflows/      # CI/CDワークフロー
-│   ├── ci-e2e-docker.yml   # 開発→本番自動マージ
-│   └── release.yml         # 本番→リリース自動化
-├── eslint.config.js        # ESLint v9 設定（Flat Config）
-├── jest.config.js          # Jest設定
-├── tsconfig.json           # TypeScript設定
-├── package.json            # npm設定（bin: miyako-maps-search.js）
-├── Makefile               # 開発用コマンド集
-└── CLAUDE.md              # Claude AI用プロジェクト記憶ファイル
-```
+**詳細なアーキテクチャ・SOLID設計・API統合については [DEVELOP.md](./DEVELOP.md) をご覧ください。**
 
 ## ライセンス
 

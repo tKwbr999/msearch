@@ -19,6 +19,9 @@ export interface Args {
   keyword?: string;
   list?: boolean;
   interactive?: boolean;
+  setup?: boolean;
+  status?: boolean;
+  version?: boolean;
 }
 
 export interface OverpassPoi {
@@ -30,9 +33,9 @@ export interface OverpassPoi {
     name?: string;
     amenity?: string;
     shop?: string;
-    'addr:housenumber'?: string;
-    'addr:street'?: string;
-    'addr:city'?: string;
+    "addr:housenumber"?: string;
+    "addr:street"?: string;
+    "addr:city"?: string;
     phone?: string;
     website?: string;
     opening_hours?: string;

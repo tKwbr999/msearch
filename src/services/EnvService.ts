@@ -1,0 +1,274 @@
+/**
+ * EnvService - Environment variable configuration service
+ * Single Responsibility: Environment setup and configuration management
+ */
+
+import { promises as fs } from "fs";
+import { homedir } from "os";
+import { join } from "path";
+import * as readline from "readline";
+
+export class EnvService {
+  private readonly envFiles = [".env.local", ".env"];
+  private readonly bashrcPath = join(homedir(), ".bashrc");
+  private readonly zshrcPath = join(homedir(), ".zshrc");
+
+  /**
+   * Check current environment status
+   */
+  public checkStatus(): void {
+    console.log("🔍 環境設定状況:\n");
+
+    // Check environment variable
+    const apiKey = process.env.FOURSQUARE_API_KEY;
+    if (apiKey) {
+      console.log("✅ FOURSQUARE_API_KEY: 設定済み");
+      console.log(
+        `   値: ${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 4)}`,
+      );
+    } else {
+      console.log("❌ FOURSQUARE_API_KEY: 未設定");
+    }
+
+    // Check .env files
+    console.log("\n📁 .envファイル:");
+    this.envFiles.forEach(async (file) => {
+      try {
+        await fs.access(file);
+        console.log(`✅ ${file}: 存在`);
+      } catch {
+        console.log(`❌ ${file}: 未作成`);
+      }
+    });
+
+    // Check shell config files
+    console.log("\n🐚 シェル設定ファイル:");
+    [this.bashrcPath, this.zshrcPath].forEach(async (file) => {
+      try {
+        await fs.access(file);
+        const content = await fs.readFile(file, "utf8");
+        if (content.includes("FOURSQUARE_API_KEY")) {
+          console.log(`✅ ${file}: msearch設定あり`);
+        } else {
+          console.log(`⚪ ${file}: 存在（msearch設定なし）`);
+        }
+      } catch {
+        console.log(`❌ ${file}: 未作成`);
+      }
+    });
+
+    console.log("\n💡 レビュー機能の状態:");
+    if (apiKey) {
+      console.log("✅ 有効 - レビュー・評価データが表示されます");
+    } else {
+      console.log("❌ 無効 - 基本検索のみ利用可能");
+      console.log("   レビュー機能を使用するには: msearch --setup");
+    }
+  }
+
+  /**
+   * Interactive setup for environment variables
+   */
+  public async setupInteractive(): Promise<void> {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    console.log("🏝️ msearch レビュー機能セットアップ\n");
+    console.log(
+      "📖 Foursquare API キーを設定することで、以下の機能が追加されます:",
+    );
+    console.log("   ⭐ レビュー・評価表示");
+    console.log("   💰 価格帯情報");
+    console.log("   📞 電話番号・営業時間");
+    console.log("   🌐 ウェブサイトURL\n");
+
+    console.log(
+      "🆓 Foursquare API 無料枠: 月40,000リクエスト（個人利用には十分）\n",
+    );
+
+    try {
+      const setupChoice = await this.askQuestion(
+        rl,
+        "設定を開始しますか？ (y/N): ",
+      );
+
+      if (
+        setupChoice.toLowerCase() !== "y" &&
+        setupChoice.toLowerCase() !== "yes"
+      ) {
+        console.log(
+          "💡 スキップしました。基本検索機能は引き続き利用できます。",
+        );
+        rl.close();
+        return;
+      }
+
+      console.log("\n🔑 Foursquare API キー取得方法:");
+      console.log("1. https://foursquare.com/developers/ にアクセス");
+      console.log("2. 無料アカウントを作成");
+      console.log('3. 新しいアプリを作成（名前は "msearch" など適当に）');
+      console.log("4. API キーをコピー");
+
+      const apiKey = await this.askQuestion(
+        rl,
+        "\nFoursquare API キーを入力してください: ",
+      );
+
+      if (!apiKey.trim()) {
+        console.log("❌ API キーが入力されませんでした。");
+        rl.close();
+        return;
+      }
+
+      const configChoice = await this.askQuestion(
+        rl,
+        "\n設定方法を選択してください:\n" +
+          "1. .env ファイル (このプロジェクトのみ)\n" +
+          "2. shell設定ファイル (グローバル設定)\n" +
+          "選択 (1/2): ",
+      );
+
+      if (configChoice === "1") {
+        await this.setupEnvFile(apiKey.trim());
+      } else if (configChoice === "2") {
+        await this.setupShellConfig(apiKey.trim());
+      } else {
+        console.log("❌ 無効な選択です。");
+        rl.close();
+        return;
+      }
+
+      console.log("\n✅ 設定完了！");
+      console.log("🧪 動作確認: msearch レストラン -l");
+      console.log("📊 設定状況確認: msearch --status");
+    } catch (error) {
+      console.error("❌ セットアップ中にエラーが発生しました:", error);
+    } finally {
+      rl.close();
+    }
+  }
+
+  /**
+   * Setup .env file
+   */
+  private async setupEnvFile(apiKey: string): Promise<void> {
+    const envContent = `# msearch environment configuration
+# Generated by: msearch --setup
+
+# Foursquare Places API Key
+# Used for reviews, ratings, and additional POI data
+FOURSQUARE_API_KEY=${apiKey}
+`;
+
+    try {
+      await fs.writeFile(".env.local", envContent);
+      console.log("✅ .env.local ファイルを作成しました");
+    } catch (error) {
+      console.error("❌ .env.local ファイルの作成に失敗しました:", error);
+    }
+  }
+
+  /**
+   * Setup shell configuration
+   */
+  private async setupShellConfig(apiKey: string): Promise<void> {
+    const shellLine = `\n# msearch configuration\nexport FOURSQUARE_API_KEY="${apiKey}"\n`;
+
+    // Detect current shell
+    const shell = process.env.SHELL || "";
+    let targetFile = this.bashrcPath;
+
+    if (shell.includes("zsh")) {
+      targetFile = this.zshrcPath;
+    }
+
+    try {
+      await fs.appendFile(targetFile, shellLine);
+      console.log(`✅ ${targetFile} に設定を追加しました`);
+      console.log("🔄 新しいターミナルを開くか、以下を実行してください:");
+      console.log(`   source ${targetFile}`);
+    } catch (error) {
+      console.error(`❌ ${targetFile} への書き込みに失敗しました:`, error);
+    }
+  }
+
+  /**
+   * Helper function for readline questions
+   */
+  private askQuestion(
+    rl: readline.Interface,
+    question: string,
+  ): Promise<string> {
+    return new Promise((resolve) => {
+      rl.question(question, (answer: string) => {
+        resolve(answer);
+      });
+    });
+  }
+
+  /**
+   * Generate .env.example file
+   */
+  public async generateEnvExample(): Promise<void> {
+    const exampleContent = `# Environment Variables for msearch
+# Copy this file to .env.local and set your API keys
+
+# Foursquare Places API Key (Optional)
+# Used for reviews, ratings, and additional POI data
+# Get your free API key at: https://foursquare.com/developers/
+# Free tier: 40,000 requests per month (sufficient for personal use)
+FOURSQUARE_API_KEY=your_foursquare_api_key_here
+
+# Note: OpenStreetMap Overpass API is free and doesn't require an API key
+# The tool will work without FOURSQUARE_API_KEY, but won't show reviews/ratings
+
+# Quick setup: msearch --setup
+# Status check: msearch --status
+`;
+
+    try {
+      await fs.writeFile(".env.example", exampleContent);
+      console.log("✅ .env.example ファイルを生成しました");
+    } catch (error) {
+      console.error("❌ .env.example ファイルの生成に失敗しました:", error);
+    }
+  }
+
+  /**
+   * Show environment setup help
+   */
+  public showSetupHelp(): void {
+    console.log(`
+🏝️ msearch 環境設定ヘルプ
+
+📊 現在の設定状況確認:
+   msearch --status
+
+🔧 対話式セットアップ:
+   msearch --setup
+
+🔑 手動設定方法:
+
+1. 📁 .env ファイル設定:
+   echo "FOURSQUARE_API_KEY=your_api_key" > .env.local
+
+2. 🐚 グローバル設定 (bash):
+   echo 'export FOURSQUARE_API_KEY="your_api_key"' >> ~/.bashrc
+   source ~/.bashrc
+
+3. 🐚 グローバル設定 (zsh):
+   echo 'export FOURSQUARE_API_KEY="your_api_key"' >> ~/.zshrc
+   source ~/.zshrc
+
+🆓 Foursquare API キー取得:
+   https://foursquare.com/developers/
+
+💡 注意事項:
+   - API キーなしでも基本検索は動作します
+   - レビュー・評価機能にはAPI キーが必要です
+   - 無料枠: 月40,000リクエスト (個人利用には十分)
+`);
+  }
+}

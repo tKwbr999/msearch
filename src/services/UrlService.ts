@@ -3,10 +3,18 @@
  * Single Responsibility: URL generation and address formatting
  */
 
-import { MIYAKOJIMA_CENTER } from '../config.js';
-import { OverpassPoi } from '../types.js';
+import { MIYAKOJIMA_CENTER } from "../config.js";
+import { OverpassPoi } from "../types.js";
 
 export class UrlService {
+  /**
+   * Build Google Maps default URL (宮古島 center)
+   */
+  public buildMapsDefaultUrl(): string {
+    const { lat, lng } = MIYAKOJIMA_CENTER;
+    return `https://www.google.com/maps/@${lat},${lng},12z`;
+  }
+
   /**
    * Build Google Maps search URL with keyword
    */
@@ -27,17 +35,17 @@ export class UrlService {
   /**
    * Build address string from OpenStreetMap tags
    */
-  public buildAddress(tags: OverpassPoi['tags']): string {
+  public buildAddress(tags: OverpassPoi["tags"]): string {
     const parts = [];
-    
-    if (tags['addr:housenumber']) parts.push(tags['addr:housenumber']);
-    if (tags['addr:street']) parts.push(tags['addr:street']);
-    if (tags['addr:city']) parts.push(tags['addr:city']);
-    
+
+    if (tags["addr:housenumber"]) parts.push(tags["addr:housenumber"]);
+    if (tags["addr:street"]) parts.push(tags["addr:street"]);
+    if (tags["addr:city"]) parts.push(tags["addr:city"]);
+
     if (parts.length === 0) {
-      return '住所情報なし';
+      return "住所情報なし";
     }
-    
-    return parts.join(' ');
+
+    return parts.join(" ");
   }
 }

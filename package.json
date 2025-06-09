@@ -1,8 +1,8 @@
 {
   "name": "msearch",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "宮古諸島専用ハイブリッドAPI検索CLIツール - OpenStreetMap + Foursquare統合",
-  "main": "main.js",
+  "main": "dist/main.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/tKwbr999/msearch.git#main",
@@ -16,8 +16,8 @@
     "url": "https://github.com/tKwbr999/msearch/issues"
   },
   "scripts": {
-    "build": "tsc && chmod +x main.js",
-    "start": "node main.js",
+    "build": "tsc && chmod +x dist/main.js",
+    "start": "node dist/main.js",
     "dev": "tsc --watch",
     "test": "jest",
     "test:unit": "jest --testPathPattern=unit",
@@ -34,15 +34,12 @@
     "fmt:check": "prettier --check \"**/*.{ts,json,md}\" --ignore-path .prettierignore"
   },
   "bin": {
-    "msearch": "main.js"
+    "msearch": "dist/main.js"
   },
   "files": [
-    "main.js",
-    "handlers/",
-    "services/",
-    "types.js",
-    "config.js",
+    "dist/",
     "README.md",
+    "DEVELOP.md",
     ".env.example"
   ],
   "keywords": [

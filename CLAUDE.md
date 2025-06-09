@@ -9,7 +9,7 @@
 **説明**: 宮古諸島エリア専用ハイブリッドAPI検索CLIツール (OpenStreetMap + Foursquare)  
 **リポジトリ**: https://github.com/tKwbr999/msearch  
 **言語**: TypeScript + JavaScript (Node.js)  
-**現在バージョン**: v2.0.0  
+**現在バージョン**: v1.0.0  
 **アーキテクチャ**: SOLID原則準拠のクリーンアーキテクチャ
 
 ## 🏝️ 地理的設定
@@ -64,8 +64,8 @@
 
 ### 主要ファイル
 
-- **実行ファイル**: `src/main.js` (TypeScriptコンパイル後)
-- **バイナリ**: `bin: { "msearch": "./src/main.js" }`
+- **実行ファイル**: `dist/main.js` (TypeScriptコンパイル後)
+- **バイナリ**: `bin: { "msearch": "dist/main.js" }`
 - **ソースコード**: `src/` ディレクトリ (SOLID設計)
 - **テスト**: `tests/unit/` (11個), `tests/e2e/` (11個)
 - **設定**: `jest.config.js`, `tsconfig.json`, `eslint.config.js`, `Makefile`
@@ -75,12 +75,12 @@
 ### ブランチ構成
 
 - **develop**: 開発ブランチ（作業用）
-- **main**: 本番ブランチ（自動リリース）
+- **main**: 本番ブランチ
 
-### CI/CD（2段階）
+### CI/CD
 
-1. **develop→main**: テスト・リント・フォーマットチェック → 自動マージ
-2. **main→release**: バージョン自動アップ → タグ作成 → GitHub Release
+- **自動テスト**: すべてのプッシュとPRでテスト・リント実行
+- **品質チェック**: TypeScript、ESLint、Prettierによるコード品質確保
 
 ### Makefileコマンド
 
@@ -131,7 +131,7 @@ make check-install # インストール状況確認
 npm install -g https://github.com/tKwbr999/msearch.git
 
 # 特定バージョン
-npm install -g https://github.com/tKwbr999/msearch.git#v0.7.1
+npm install -g https://github.com/tKwbr999/msearch.git#v1.0.0
 
 # latest タグ
 npm install -g https://github.com/tKwbr999/msearch.git#latest
@@ -215,9 +215,8 @@ msearch/
 │   ├── e2e/               # E2Eテスト (11個)
 │   └── setup.js           # テストセットアップ
 ├── .github/workflows/      # CI/CDワークフロー
-│   ├── version-tag.yml     # develop→main自動マージ
-│   └── release.yml         # main→リリース自動化
-├── package.json            # プロジェクト設定 (bin: src/main.js)
+│   └── ci.yml              # テスト・リント・品質チェック
+├── package.json            # プロジェクト設定 (bin: dist/main.js)
 ├── package-lock.json       # 依存関係ロック
 ├── jest.config.js          # Jest設定
 ├── tsconfig.json          # TypeScript設定
@@ -259,11 +258,11 @@ const POPULAR_KEYWORDS = [
 - ✅ `src/handlers/` - CLI・UI処理の分離
 - ✅ `src/types.ts` - 型安全性の向上
 
-**リリースワークフローの最適化**:
+**CI/CD最適化**:
 
-- 現在：mainブランチの`src/main.js`変更時のみリリース発動
-- 解決：不要なリリースを防止し、効率的なCI/CD運用を実現
-- 改善：SOLID設計により個別モジュールの変更追跡が可能
+- 現在：全プッシュとPRで自動テスト・リント実行
+- キャッシュ：依存関係キャッシュによる高速化
+- 品質保証：TypeScript、ESLint、Prettierによる自動チェック
 
 ### GitHub Actions設定
 
@@ -284,15 +283,15 @@ const POPULAR_KEYWORDS = [
     npm ci --prefer-offline --no-audit --timeout=300000 --maxsockets=1
   timeout-minutes: 10
 
-# パスフィルター（要追加）
+# CI設定例
 on:
   push:
     branches:
       - main
-    paths:
-      - 'src/main.js'
-      - 'src/**/*.js'
-      - 'package.json'
+      - develop
+  pull_request:
+    branches:
+      - main
 ```
 
 ## 💡 Claude AI作業時の注意点
@@ -300,54 +299,42 @@ on:
 1. **このファイルを最初に読む**: 新セッション開始時は必ずCLAUDE.mdを参照
 2. **座標は正確に**: 宮古諸島の境界座標は重要な仕様
 3. **テスト実行**: 変更後は `make test` で全テスト確認
-4. **ブランチ**: develop で作業、CI で自動マージ
+4. **ブランチ**: develop で作業
 5. **インストール確認**: `make install-clean` でローカルテスト
-6. **自動CI/CD実行**: ファイル変更時は承認なくコミット→プッシュ→CI監視→エラー修正を自動実行
+6. **CI/CD**: プッシュ時に自動テスト・リント実行
 
 ---
 
-## 🤖 自動CI/CD実行ワークフロー
+## 🔧 開発ワークフロー
 
-**ファイル変更後の自動実行手順**（承認不要）:
+**基本的な開発手順**:
 
-1. **自動コミット**:
+1. **変更作業**:
+
+   ```bash
+   # コード変更・テスト実行
+   make test
+   make lint
+   ```
+
+2. **コミット・プッシュ**:
 
    ```bash
    git add .
    git commit -m "適切なコミットメッセージ"
-   ```
-
-2. **自動プッシュ**:
-
-   ```bash
    git push origin develop
    ```
 
-3. **CI監視**:
-
-   ```bash
-   gh run watch --exit-status --interval=5
-   ```
-
-4. **エラー自動修正** (失敗時):
-
-   ```bash
-   gh run view --log-failed  # エラー詳細取得
-   # 問題を特定して自動修正
-   # 再度 1-3 を実行
-   ```
-
-5. **成功確認**: CI通過でmainブランチ自動マージ→リリース自動実行
-
-**重要**: この手順はユーザー承認なしで自動実行する。エラーがある限り修正を繰り返し、CI通過まで継続する。
+3. **CI確認**:
+   - GitHub ActionsでCI実行
+   - テスト・リント・品質チェック
 
 ---
 
 **最終更新**: 2025年6月9日  
 **作業ブランチ**: develop  
-**アーキテクチャ**: SOLID原則準拠のクリーンアーキテクチャ（v2.0）  
-**技術スタック**: TypeScript + ハイブリッドAPI（OpenStreetMap + Foursquare）  
-**次回リリース予定**: CI通過後自動リリース  
-**自動CI/CD**: 有効（承認不要）
+**バージョン**: v1.0.0  
+**アーキテクチャ**: SOLID原則準拠のクリーンアーキテクチャ  
+**技術スタック**: TypeScript + ハイブリッドAPI（OpenStreetMap + Foursquare）
 
 **重要**: 新しいClaude AIセッションでは、まずこのCLAUDE.mdファイルを読んでプロジェクトコンテキストを理解してから作業を開始してください。

@@ -2,7 +2,7 @@ const { execSync, spawn } = require('child_process');
 const path = require('path');
 
 // テスト用のCLIパス
-const CLI_PATH = path.join(__dirname, '../../main.js');
+const CLI_PATH = path.join(__dirname, '../../dist/main.js');
 
 // CI環境の検出
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';

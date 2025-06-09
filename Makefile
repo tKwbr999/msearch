@@ -14,10 +14,10 @@ install: ## 依存関係をインストール
 	npm ci --no-audit --no-fund
 
 # ビルド・SOLID アーキテクチャ
-build: ## TypeScriptをビルド（src/からルートへ）
+build: ## TypeScriptをビルド（src/からdist/へ）
 	@echo "🏗️ Building TypeScript with SOLID architecture..."
 	npm run build
-	@echo "✅ Build completed: main.js, handlers/, services/ generated"
+	@echo "✅ Build completed: dist/ directory generated"
 
 start: ## ビルド済みメインファイルを実行
 	@echo "🚀 Starting built application..."
@@ -87,6 +87,13 @@ check: fmt-check lint yaml-check ## フォーマットとリントとYAMLをチ�
 
 check-all: build lint fmt test ## 全チェック（ビルド+リント+フォーマット+テスト）
 	@echo "✅ All checks completed for SOLID architecture version"
+	@if command -v afplay >/dev/null 2>&1; then \
+		afplay /System/Library/Sounds/Glass.aiff 2>/dev/null || true; \
+	elif command -v paplay >/dev/null 2>&1; then \
+		paplay /usr/share/sounds/alsa/Front_Left.wav 2>/dev/null || true; \
+	else \
+		echo -e "\a"; \
+	fi
 
 check-ci: ## CI用のフォーマット・リントチェック（SOLID版）
 	@echo "🤖 Running CI checks for SOLID architecture..."
@@ -98,10 +105,10 @@ check-ci: ## CI用のフォーマット・リントチェック（SOLID版）
 	echo "✅ CI checks completed for SOLID architecture"
 
 # クリーンアップ
-clean: ## ビルド成果物とnode_modulesを削除（SOLID版）
-	@echo "🧹 Cleaning SOLID architecture build artifacts..."
-	rm -rf main.js handlers/ services/ types.js config.js node_modules/ coverage/ *.tgz
-	@echo "✅ Cleaned: Compiled JS files, node_modules, coverage removed"
+clean: ## ビルド成果物とnode_modulesを削除（dist版）
+	@echo "🧹 Cleaning TypeScript build artifacts..."
+	rm -rf dist/ node_modules/ coverage/ *.tgz
+	@echo "✅ Cleaned: dist/, node_modules, coverage removed"
 
 # ローカルインストール管理
 install-clean: build ## ビルド後にローカルからグローバルインストール
@@ -113,7 +120,7 @@ check-install: ## インストール状況を確認
 	@echo "🔍 Checking installation status..."
 	@echo "Global msearch location: $$(which msearch 2>/dev/null || echo 'Not installed globally')"
 	@echo "Version: $$(msearch --help 2>/dev/null | head -1 || echo 'Not accessible')"
-	@echo "Local build status: $$(test -f main.js && echo 'Built' || echo 'Not built')"
+	@echo "Local build status: $$(test -f dist/main.js && echo 'Built' || echo 'Not built')"
 
 # グローバルインストール管理
 uninstall: ## グローバルパッケージをアンインストール
@@ -124,6 +131,13 @@ reinstall: uninstall ## アンインストール後に再インストール
 	@echo "🔄 Reinstalling msearch globally..."
 	npm install -g .
 	@echo "✅ Reinstall completed"
+	@if command -v afplay >/dev/null 2>&1; then \
+		afplay /System/Library/Sounds/Hero.aiff 2>/dev/null || true; \
+	elif command -v paplay >/dev/null 2>&1; then \
+		paplay /usr/share/sounds/alsa/Front_Right.wav 2>/dev/null || true; \
+	else \
+		echo -e "\a"; \
+	fi
 
 # パッケージ管理
 update-deps: ## 依存関係を最新バージョンに更新
@@ -156,5 +170,5 @@ info: ## プロジェクト情報を表示（SOLID版）
 	@echo "  Language: TypeScript + JavaScript (Node.js)"
 	@echo "  Node.js: $(shell node --version 2>/dev/null || echo 'Not installed')"
 	@echo "  npm: $(shell npm --version 2>/dev/null || echo 'Not installed')"
-	@echo "  Build Status: $(shell test -f main.js && echo '✅ Built' || echo '❌ Not built')"
+	@echo "  Build Status: $(shell test -f dist/main.js && echo '✅ Built' || echo '❌ Not built')"
 	@echo "  Global Install: $(shell which msearch >/dev/null 2>&1 && echo '✅ Installed' || echo '❌ Not installed')"

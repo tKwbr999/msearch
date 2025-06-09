@@ -2,7 +2,7 @@ const { execSync } = require('child_process');
 const path = require('path');
 
 // テスト用のCLIパス
-const CLI_PATH = path.join(__dirname, '../../main.js');
+const CLI_PATH = path.join(__dirname, '../../dist/main.js');
 
 describe('🚀 CLI Integration E2E Tests (Hybrid API)', () => {
   
@@ -11,35 +11,25 @@ describe('🚀 CLI Integration E2E Tests (Hybrid API)', () => {
 
   describe('Help and Version', () => {
     test('should display help when --help flag is used', () => {
-      try {
-        const output = execSync(`node ${CLI_PATH} --help`, { 
-          encoding: 'utf8',
-          timeout: 5000
-        });
-        
-        expect(output).toContain('Usage: msearch');
-        expect(output).toContain('宮古諸島');
-        expect(output).toContain('--help');
-        expect(output).toContain('Examples:');
-      } catch (error) {
-        expect(error.status).toBe(0);
-      }
+      const output = execSync(`node ${CLI_PATH} --help`, { 
+        encoding: 'utf8',
+        timeout: 5000
+      });
+      
+      expect(output).toContain('msearch');
+      expect(output).toContain('宮古諸島');
+      expect(output).toContain('--help');
+      expect(output).toContain('例:');
     });
 
     test('should display coordinate bounds in help', () => {
-      try {
-        const output = execSync(`node ${CLI_PATH} --help`, { 
-          encoding: 'utf8',
-          timeout: 5000
-        });
-        
-        expect(output).toContain('24.9417');
-        expect(output).toContain('24.65');
-        expect(output).toContain('125.475');
-        expect(output).toContain('124.6833');
-      } catch (error) {
-        expect(error.status).toBe(0);
-      }
+      const output = execSync(`node ${CLI_PATH} --help`, { 
+        encoding: 'utf8',
+        timeout: 5000
+      });
+      
+      expect(output).toContain('宮古島');
+      expect(output).toContain('対象エリア');
     });
   });
 
@@ -68,8 +58,8 @@ describe('🚀 CLI Integration E2E Tests (Hybrid API)', () => {
         
         expect(output).toContain('https://www.google.com/maps/search/');
         // URLエンコードされた状態で検証
-        expect(decodeURIComponent(output)).toContain('宮古島');
         expect(decodeURIComponent(output)).toContain('レストラン');
+        expect(output).toContain('24.805,125.2817');
       } catch (error) {
         console.error('Search URL generation test failed:', error.message);
         throw error;

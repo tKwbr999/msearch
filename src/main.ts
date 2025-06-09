@@ -5,14 +5,14 @@
  * Open/Closed: Easy to extend with new handlers
  */
 
-import { config } from 'dotenv';
-import { argv } from 'process';
-import { CliHandler } from './handlers/CliHandler.js';
-import { InteractiveHandler } from './handlers/InteractiveHandler.js';
-import { HelpHandler } from './handlers/HelpHandler.js';
+import { config } from "dotenv";
+import { argv } from "process";
+import { CliHandler } from "./handlers/CliHandler.js";
+import { InteractiveHandler } from "./handlers/InteractiveHandler.js";
+import { HelpHandler } from "./handlers/HelpHandler.js";
 
 // Load environment variables from .env, .env.local, etc.
-config({ path: ['.env.local', '.env'] });
+config({ path: [".env.local", ".env"] });
 
 export class MSearchApp {
   private cliHandler: CliHandler;
@@ -32,8 +32,26 @@ export class MSearchApp {
     const args = this.cliHandler.parseArgs();
 
     // Show help
-    if (argv.includes('--help') || argv.includes('-h')) {
+    if (argv.includes("--help") || argv.includes("-h")) {
       this.helpHandler.show();
+      return;
+    }
+
+    // Environment setup
+    if (args.setup) {
+      await this.cliHandler.handleSetup();
+      return;
+    }
+
+    // Environment status
+    if (args.status) {
+      this.cliHandler.handleStatus();
+      return;
+    }
+
+    // Version display
+    if (args.version) {
+      this.cliHandler.handleVersion();
       return;
     }
 
@@ -49,10 +67,26 @@ export class MSearchApp {
       return;
     }
 
+    // Show help if no arguments provided (msearch alone)
+    if (
+      !args.keyword &&
+      !args.list &&
+      !args.urlOnly &&
+      !args.interactive &&
+      !args.setup &&
+      !args.status &&
+      !args.version
+    ) {
+      this.helpHandler.show();
+      return;
+    }
+
     // Validate keyword for other modes
     if (!args.keyword) {
-      console.error('❌ 検索キーワードを指定してください。');
-      console.log('使用方法: msearch <keyword> または msearch --help でヘルプを表示');
+      console.error("❌ 検索キーワードを指定してください。");
+      console.log(
+        "使用方法: msearch <keyword> または msearch --help でヘルプを表示",
+      );
       process.exit(1);
     }
 
@@ -73,7 +107,7 @@ async function main(): Promise<void> {
     const app = new MSearchApp();
     await app.run();
   } catch (error) {
-    console.error('❌ エラーが発生しました:', error);
+    console.error("❌ エラーが発生しました:", error);
     process.exit(1);
   }
 }
@@ -81,7 +115,7 @@ async function main(): Promise<void> {
 // Entry point
 if (require.main === module) {
   main().catch((error) => {
-    console.error('Fatal error:', error);
+    console.error("Fatal error:", error);
     process.exit(1);
   });
 }
