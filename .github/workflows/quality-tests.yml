@@ -1,10 +1,10 @@
-name: CI
+name: Code Quality & Tests
 
 on:
   push:
-    branches: [ develop ]
+    branches: [ "**" ]  # すべてのブランチ
   pull_request:
-    branches: [ develop ]
+    branches: [ main, develop ]
 
 jobs:
   test:

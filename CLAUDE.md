@@ -6,10 +6,11 @@
 ## 📋 プロジェクト概要
 
 **プロジェクト名**: msearch  
-**説明**: 宮古諸島エリア専用 Google Maps 検索CLI ツール  
+**説明**: 宮古諸島エリア専用ハイブリッドAPI検索CLIツール (OpenStreetMap + Foursquare)  
 **リポジトリ**: https://github.com/tKwbr999/msearch  
-**言語**: JavaScript (Node.js)  
-**現在バージョン**: v0.7.1
+**言語**: TypeScript + JavaScript (Node.js)  
+**現在バージョン**: v1.0.0  
+**アーキテクチャ**: SOLID原則準拠のクリーンアーキテクチャ
 
 ## 🏝️ 地理的設定
 
@@ -57,27 +58,29 @@
 
 ### 依存関係
 
-- **プロダクション**: `playwright` (v1.42.1), `cheerio` (v1.0.0-rc.12)
-- **開発**: `jest` (v29.7.0), `puppeteer` (v21.11.0), `typescript`, `eslint`, `prettier`
+- **プロダクション**: `axios` (v1.9.0), `dotenv` (v16.5.0)
+- **開発**: `jest` (v29.7.0), `typescript` (v5.5.4), `eslint` (v9.28.0), `prettier` (v3.2.5)
+- **API**: OpenStreetMap Overpass API (無料), Foursquare Places API (月40,000リクエスト無料)
 
 ### 主要ファイル
 
-- **実行ファイル**: `miyako-maps-search.js`
-- **バイナリ**: `bin: { "msearch": "./miyako-maps-search.js" }`
+- **実行ファイル**: `dist/main.js` (TypeScriptコンパイル後)
+- **バイナリ**: `bin: { "msearch": "dist/main.js" }`
+- **ソースコード**: `src/` ディレクトリ (SOLID設計)
 - **テスト**: `tests/unit/` (11個), `tests/e2e/` (11個)
-- **設定**: `jest.config.js`, `tsconfig.json`, `.eslintrc`, `Makefile`
+- **設定**: `jest.config.js`, `tsconfig.json`, `eslint.config.js`, `Makefile`
 
 ## 🔧 開発ワークフロー
 
 ### ブランチ構成
 
 - **develop**: 開発ブランチ（作業用）
-- **main**: 本番ブランチ（自動リリース）
+- **main**: 本番ブランチ
 
-### CI/CD（2段階）
+### CI/CD
 
-1. **develop→main**: テスト・リント・フォーマットチェック → 自動マージ
-2. **main→release**: バージョン自動アップ → タグ作成 → GitHub Release
+- **自動テスト**: すべてのプッシュとPRでテスト・リント実行
+- **品質チェック**: TypeScript、ESLint、Prettierによるコード品質確保
 
 ### Makefileコマンド
 
@@ -128,7 +131,7 @@ make check-install # インストール状況確認
 npm install -g https://github.com/tKwbr999/msearch.git
 
 # 特定バージョン
-npm install -g https://github.com/tKwbr999/msearch.git#v0.7.1
+npm install -g https://github.com/tKwbr999/msearch.git#v1.0.0
 
 # latest タグ
 npm install -g https://github.com/tKwbr999/msearch.git#latest
@@ -145,11 +148,22 @@ make install-clean  # ローカルから直接インストール
 
 ## 🎯 重要な実装詳細
 
-### 検索機能
+### ハイブリッドAPI検索アーキテクチャ
 
-- **関数**: `searchPlacesInTerminal(keyword, bounds)`
-- **スクレイピング**: `scrapeGoogleMapsResults(searchUrl)`
-- **URL生成**: `buildMapsUrl(keyword)`
+- **SearchService**: 検索統合ファサード（メイン検索エントリーポイント）
+- **OverpassService**: OpenStreetMap API統合（基本POIデータ取得）
+- **FoursquareService**: Foursquare API統合（レビュー・評価データ取得）
+- **PoiService**: POI情報統合・表示フォーマット処理
+- **KeywordService**: キーワード変換・類似語検索
+- **UrlService**: GoogleMaps URL生成
+
+### SOLID原則適用詳細
+
+1. **Single Responsibility**: 各サービスが単一の責任を持つ
+2. **Open/Closed**: 新しいAPI・ハンドラーを簡単に追加可能
+3. **Liskov Substitution**: インターフェース準拠で代替可能
+4. **Interface Segregation**: 必要な機能のみを公開
+5. **Dependency Inversion**: 具象クラスでなく抽象に依存
 
 ### インタラクティブモード
 
@@ -181,22 +195,37 @@ make install-clean  # ローカルから直接インストール
 
 ```
 msearch/
-├── miyako-maps-search.js    # メイン実行ファイル
-├── miyako-maps-search.ts    # TypeScriptソース（参考用）
-├── package.json             # プロジェクト設定
-├── package-lock.json        # 依存関係ロック
-├── jest.config.js           # Jest設定
-├── tsconfig.json           # TypeScript設定
-├── Makefile                # 開発コマンド
-├── README.md               # ユーザー向けドキュメント
-├── CLAUDE.md               # このファイル（Claude用記憶）
-├── .github/workflows/      # CI/CDワークフロー
-│   ├── version-tag.yml     # develop→main自動マージ
-│   └── release.yml         # main→リリース自動化
+├── src/                     # ソースコードディレクトリ（SOLID設計）
+│   ├── main.ts             # メインエントリーポイント
+│   ├── types.ts            # 型定義
+│   ├── config.ts           # 設定・定数
+│   ├── handlers/           # CLI・UI処理ハンドラー
+│   │   ├── CliHandler.ts   # CLI引数解析・実行
+│   │   ├── InteractiveHandler.ts # 対話型モード
+│   │   └── HelpHandler.ts  # ヘルプ表示
+│   └── services/           # ビジネスロジックサービス
+│       ├── SearchService.ts    # 検索統合（ファサード）
+│       ├── OverpassService.ts  # OpenStreetMap API
+│       ├── FoursquareService.ts # Foursquare API
+│       ├── PoiService.ts      # POI処理・表示
+│       ├── KeywordService.ts  # キーワード変換
+│       └── UrlService.ts      # URL生成
 ├── tests/                  # テストディレクトリ
-│   ├── unit/              # 単体テスト
-│   ├── e2e/               # E2Eテスト
+│   ├── unit/              # 単体テスト (11個)
+│   ├── e2e/               # E2Eテスト (11個)
 │   └── setup.js           # テストセットアップ
+├── .github/workflows/      # CI/CDワークフロー
+│   └── ci.yml              # テスト・リント・品質チェック
+├── package.json            # プロジェクト設定 (bin: dist/main.js)
+├── package-lock.json       # 依存関係ロック
+├── jest.config.js          # Jest設定
+├── tsconfig.json          # TypeScript設定
+├── eslint.config.js       # ESLint v9設定（Flat Config）
+├── Makefile               # 開発コマンド
+├── README.md              # ユーザー向けドキュメント
+├── CLAUDE.md              # このファイル（Claude用記憶）
+├── .env.local             # 環境変数（ローカル開発用）
+├── .envrc                 # direnv設定
 ├── coverage/              # テストカバレッジ（.gitignore済み）
 └── node_modules/          # 依存関係（.gitignore済み）
 ```
@@ -222,17 +251,18 @@ const POPULAR_KEYWORDS = [
 
 ### 現在の課題と解決方針
 
-**ファイル構成の問題**:
+**ファイル構成の改善（解決済み）**:
 
-- `miyako-maps-search.js` (root, 547行) - 実際に使用される実行ファイル
-- `build/miyako-maps-search.js` (319行) - 未使用のTypeScriptコンパイル成果物
-- `miyako-maps-search.ts` - 開発用TypeScriptソース
+- ✅ `src/main.js` - SOLID原則に基づくモジュラー設計に移行
+- ✅ `src/services/` - 各サービスクラスによる責任分離
+- ✅ `src/handlers/` - CLI・UI処理の分離
+- ✅ `src/types.ts` - 型安全性の向上
 
-**リリースワークフローの問題**:
+**CI/CD最適化**:
 
-- 現在：mainブランチへの全pushでリリースが発動
-- 課題：コードに変更がなくてもリリースが実行される
-- 解決策：`miyako-maps-search.js`の変更時のみ発動するよう修正
+- 現在：全プッシュとPRで自動テスト・リント実行
+- キャッシュ：依存関係キャッシュによる高速化
+- 品質保証：TypeScript、ESLint、Prettierによる自動チェック
 
 ### GitHub Actions設定
 
@@ -253,14 +283,15 @@ const POPULAR_KEYWORDS = [
     npm ci --prefer-offline --no-audit --timeout=300000 --maxsockets=1
   timeout-minutes: 10
 
-# パスフィルター（要追加）
+# CI設定例
 on:
   push:
     branches:
       - main
-    paths:
-      - 'miyako-maps-search.js'
-      - 'package.json'
+      - develop
+  pull_request:
+    branches:
+      - main
 ```
 
 ## 💡 Claude AI作業時の注意点
@@ -268,52 +299,42 @@ on:
 1. **このファイルを最初に読む**: 新セッション開始時は必ずCLAUDE.mdを参照
 2. **座標は正確に**: 宮古諸島の境界座標は重要な仕様
 3. **テスト実行**: 変更後は `make test` で全テスト確認
-4. **ブランチ**: develop で作業、CI で自動マージ
+4. **ブランチ**: develop で作業
 5. **インストール確認**: `make install-clean` でローカルテスト
-6. **自動CI/CD実行**: ファイル変更時は承認なくコミット→プッシュ→CI監視→エラー修正を自動実行
+6. **CI/CD**: プッシュ時に自動テスト・リント実行
 
 ---
 
-## 🤖 自動CI/CD実行ワークフロー
+## 🔧 開発ワークフロー
 
-**ファイル変更後の自動実行手順**（承認不要）:
+**基本的な開発手順**:
 
-1. **自動コミット**:
+1. **変更作業**:
+
+   ```bash
+   # コード変更・テスト実行
+   make test
+   make lint
+   ```
+
+2. **コミット・プッシュ**:
 
    ```bash
    git add .
    git commit -m "適切なコミットメッセージ"
-   ```
-
-2. **自動プッシュ**:
-
-   ```bash
    git push origin develop
    ```
 
-3. **CI監視**:
-
-   ```bash
-   gh run watch --exit-status --interval=5
-   ```
-
-4. **エラー自動修正** (失敗時):
-
-   ```bash
-   gh run view --log-failed  # エラー詳細取得
-   # 問題を特定して自動修正
-   # 再度 1-3 を実行
-   ```
-
-5. **成功確認**: CI通過でmainブランチ自動マージ→リリース自動実行
-
-**重要**: この手順はユーザー承認なしで自動実行する。エラーがある限り修正を繰り返し、CI通過まで継続する。
+3. **CI確認**:
+   - GitHub ActionsでCI実行
+   - テスト・リント・品質チェック
 
 ---
 
-**最終更新**: 2025年6月7日  
+**最終更新**: 2025年6月9日  
 **作業ブランチ**: develop  
-**次回リリース予定**: CI通過後自動リリース  
-**自動CI/CD**: 有効（承認不要）
+**バージョン**: v1.0.0  
+**アーキテクチャ**: SOLID原則準拠のクリーンアーキテクチャ  
+**技術スタック**: TypeScript + ハイブリッドAPI（OpenStreetMap + Foursquare）
 
 **重要**: 新しいClaude AIセッションでは、まずこのCLAUDE.mdファイルを読んでプロジェクトコンテキストを理解してから作業を開始してください。

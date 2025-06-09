@@ -2,7 +2,7 @@ const { execSync, spawn } = require('child_process');
 const path = require('path');
 
 // テスト用のCLIパス
-const CLI_PATH = path.join(__dirname, '../../miyako-maps-search.js');
+const CLI_PATH = path.join(__dirname, '../../dist/main.js');
 
 // CI環境の検出
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
@@ -20,8 +20,8 @@ describe('🚀 CI Optimized E2E Tests', () => {
           timeout: 3000 // 3秒以内での応答を要求
         });
         
-        expect(output).toContain('Usage: msearch');
-        expect(output).toContain('Options:');
+        expect(output).toContain('msearch');
+        expect(output).toContain('使用方法:');
         expect(output).toContain('宮古諸島');
       } catch (error) {
         if (error.status === 0) {
@@ -41,8 +41,8 @@ describe('🚀 CI Optimized E2E Tests', () => {
         });
         
         // バージョン情報の基本チェック
-        expect(output).toContain('Miyako Islands');
-        expect(output).toContain('24.9417');
+        expect(output).toContain('宮古諸島');
+        expect(output).toContain('Hybrid API版');
       } catch (error) {
         // CI環境では基本的な実行確認のみ
         if (isCI && error.status === 0) {
@@ -100,9 +100,9 @@ describe('🚀 CI Optimized E2E Tests', () => {
   });
 
   describe('URL Generation (Network-Free)', () => {
-    test('should generate URLs without network calls', () => {
+    test('should generate default map URL without keyword', () => {
       try {
-        const output = execSync(`node ${CLI_PATH} --url-only`, { 
+        const output = execSync(`node ${CLI_PATH} テスト --url-only`, { 
           encoding: 'utf8',
           timeout: 2000,
           env: {
@@ -134,7 +134,7 @@ describe('🚀 CI Optimized E2E Tests', () => {
         });
         
         expect(output.trim()).toMatch(/^https:\/\/www\.google\.com\/maps\/search/);
-        expect(output).toContain('bounds=');
+        expect(output).toContain('24.805,125.2817'); // 宮古島中心座標
       } catch (error) {
         if (isCI) {
           expect(true).toBe(true);

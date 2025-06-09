@@ -1,8 +1,8 @@
 {
   "name": "msearch",
-  "version": "0.0.0",
-  "description": "宮古諸島専用Google Mapsコマンドライン検索ツール",
-  "main": "miyako-maps-search.js",
+  "version": "1.0.0",
+  "description": "宮古諸島専用ハイブリッドAPI検索CLIツール - OpenStreetMap + Foursquare統合",
+  "main": "dist/main.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/tKwbr999/msearch.git#main",
@@ -16,9 +16,9 @@
     "url": "https://github.com/tKwbr999/msearch/issues"
   },
   "scripts": {
-    "build": "tsc && chmod +x miyako-maps-search.js",
-    "start": "node miyako-maps-search.js",
-    "dev": "ts-node miyako-maps-search.ts",
+    "build": "tsc && chmod +x dist/main.js",
+    "start": "node dist/main.js",
+    "dev": "tsc --watch",
     "test": "jest",
     "test:unit": "jest --testPathPattern=unit",
     "test:e2e": "jest --testPathPattern=e2e",
@@ -28,32 +28,41 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --maxWorkers=2 --testTimeout=10000",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
     "fmt": "prettier --write \"**/*.{ts,json,md}\" --ignore-path .prettierignore",
     "fmt:check": "prettier --check \"**/*.{ts,json,md}\" --ignore-path .prettierignore"
   },
   "bin": {
-    "msearch": "miyako-maps-search.js"
+    "msearch": "dist/main.js"
   },
   "files": [
-    "miyako-maps-search.js",
-    "README.md"
+    "dist/",
+    "README.md",
+    "DEVELOP.md",
+    ".env.example"
   ],
   "keywords": [
     "cli",
     "maps",
-    "google-maps",
     "search",
     "miyako",
     "okinawa",
     "japan",
-    "宮古島"
+    "宮古島",
+    "openstreetmap",
+    "overpass-api",
+    "foursquare",
+    "hybrid-api",
+    "poi",
+    "reviews",
+    "ratings"
   ],
   "author": "tKwbr999",
   "license": "MIT",
   "dependencies": {
-    "playwright": "^1.42.1"
+    "axios": "1.9.0",
+    "dotenv": "16.5.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.2",
